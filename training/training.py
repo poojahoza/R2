@@ -5,13 +5,15 @@ Created on Mon Jun 21 14:58:50 2021
 
 @author: poojaoza
 """
-
+import argparse
 import torch
 import torch.optim as optim
 import torch.nn as nn
 
 from models import RBERTQ1
 from transformers import BertConfig
+
+from data_preprocessing import RBERTQ1_data_preprocessor
 
 
 
@@ -49,3 +51,11 @@ def training(final_dataset):
           running_loss = 0.0
     
     print('Finished Training')
+ 
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="training")
+    parser.add_argument("--input")
+    parser.add_argument("--output")
+    args = parser.parse_args()
+    dataset = RBERTQ1_data_preprocessor(args.input, args.output)
+    training(dataset)
