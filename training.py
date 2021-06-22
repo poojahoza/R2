@@ -13,7 +13,7 @@ import torch.nn as nn
 from models import RBERTQ1
 from transformers import BertConfig
 
-from data_preprocessing import RBERTQ1_data_preprocessor
+from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocessor
 
 
 
