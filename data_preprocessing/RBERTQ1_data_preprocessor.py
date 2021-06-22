@@ -121,7 +121,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
             exception_count += 1
             print(exception_count)
     
-    print(sentence_count)
+    print("The sentence count is %d" % sentence_count)
     features_file = trained_model_output_file
     if os.path.exists(features_file):
       print('in if')
@@ -139,7 +139,8 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
     query_att_mask_tensor = torch.tensor([q_attn[7] for q_attn in final_data_list])
     
     
-    print(ent1_mask_tensor.shape)
+    #print(ent1_mask_tensor.shape)
+    print("Finished Data Preprocessing")
     
     final_dataset = torch.utils.data.TensorDataset(
         indexed_tokens_tensor,

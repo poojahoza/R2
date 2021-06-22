@@ -21,7 +21,8 @@ def training(final_dataset):
     
     config = BertConfig()
     model = RBERTQ1(config=config)
-    print(model)
+    #print(model)
+    print("Started with training")
 
     trainloader = torch.utils.data.DataLoader(final_dataset, batch_size=16, shuffle=True, num_workers=2)
     #classes = ('0', '1')
