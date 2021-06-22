@@ -24,6 +24,8 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
     # Load pre-trained model tokenizer (vocabulary)
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     
+    print("Started data preprocessing")
+    
     with open(input_train_data) as reader_file:
       for sentence in reader_file:
         #if sentence_count == 5:
@@ -42,7 +44,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
             
             ent2_pos_st = tokenized_text.index('#')
             ent2_pos_end = tokenized_text.index('#', ent2_pos_st+1)
-            print(ent1_pos_st, ent1_pos_end, ent2_pos_st, ent2_pos_end)
+            #print(ent1_pos_st, ent1_pos_end, ent2_pos_st, ent2_pos_end)
         
             if len(query_tokenized_text) > max_sentence_len:
               query_tokenized_text = query_tokenized_text[:max_sentence_len] # If the length of the sentence is more than max length then truncate
@@ -117,11 +119,12 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
         
             final_data_list.append(input_data)
             sentence_count += 1
+            print("sentence count : %d " % sentence_count)
         except ValueError:
             exception_count += 1
-            print(exception_count)
+            print("exception count : %d " % exception_count)
     
-    print("The sentence count is %d" % sentence_count)
+    #print("The sentence count is %d" % sentence_count)
     features_file = trained_model_output_file
     if os.path.exists(features_file):
       print('in if')
