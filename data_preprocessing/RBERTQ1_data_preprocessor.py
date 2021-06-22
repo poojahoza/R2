@@ -19,6 +19,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
     final_data_list = []
     sentence_count = 0
     sentence_list = []
+    exception_count = 0
     
     # Load pre-trained model tokenizer (vocabulary)
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
@@ -27,93 +28,98 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
       for sentence in reader_file:
         #if sentence_count == 5:
           #break
-        input_data = []
-    
-        # Split the sentence into tokens with BERT tokenizer
-        splited_text = sentence.split('\t')
-        query_tokenized_text = tokenizer.tokenize(splited_text[1]) 
-        tokenized_text = tokenizer.tokenize(splited_text[2])
-        print(tokenized_text)
-        sentence_list.append((splited_text[2], splited_text[3]))
-        ent1_pos_st = tokenized_text.index('$')
-        ent1_pos_end = tokenized_text.index('$', ent1_pos_st+1)
-        ent2_pos_st = tokenized_text.index('#')
-        ent2_pos_end = tokenized_text.index('#', ent2_pos_st+1)
-        print(ent1_pos_st, ent1_pos_end, ent2_pos_st, ent2_pos_end)
-    
-        if len(query_tokenized_text) > max_sentence_len:
-          query_tokenized_text = query_tokenized_text[:max_sentence_len] # If the length of the sentence is more than max length then truncate
-    
-    
-        if len(tokenized_text) > max_sentence_len:
-          tokenized_text = tokenized_text[:max_sentence_len] # If the length of the sentence is more than max length then truncate
-    
-        # Map the token strings to their vocabulary indeces.
-        query_indexed_tokens = tokenizer.convert_tokens_to_ids(query_tokenized_text)
-        # Mark each of the tokens as belonging to sentence "0".
-        query_segments_ids = [0] * len(query_tokenized_text)
-    
-        # Mask the sentence tokens with 1
-        query_att_mask = [1] * len(query_indexed_tokens)
-    
-        # padding the rest of the sequence length
-        query_padding_len = max_sentence_len - len(query_indexed_tokens)
-    
-        # Add the padded token to the indexed tokens
-        query_indexed_tokens = query_indexed_tokens + [0]*query_padding_len
-    
-        # Mask the padded tokens with 0
-        query_att_mask = query_att_mask + [0]*query_padding_len
-    
-        # Mark the padded tokens as belonging to sentence "0"
-        query_segments_ids = query_segments_ids + [0]*query_padding_len
-    
-    
-    
-        # Map the token strings to their vocabulary indeces.
-        indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
-        # Mark each of the tokens as belonging to sentence "0".
-        segments_ids = [0] * len(tokenized_text)
+        try:
+            input_data = []
         
-        # Mask the sentence tokens with 1
-        att_mask = [1] * len(indexed_tokens)
-    
-        # padding the rest of the sequence length
-        padding_len = max_sentence_len - len(indexed_tokens)
-    
-        # Add the padded token to the indexed tokens
-        indexed_tokens = indexed_tokens + [0]*padding_len
-    
-        # Mask the padded tokens with 0
-        att_mask = att_mask + [0]*padding_len
-    
-        # Mark the padded tokens as belonging to sentence "0"
-        segments_ids = segments_ids + [0]*padding_len
-    
-        # Initialize entity masks
-        ent1_mask = [0]*len(att_mask)
-        ent2_mask = [0]*len(att_mask)
-    
-        # Mark the entity masks with 1 in the entity positions
-        for ent1_ind in range(ent1_pos_st+1, ent1_pos_end):
-          ent1_mask[ent1_ind] = 1
-        print(ent1_mask)
-    
-        for ent2_ind in range(ent2_pos_st+1, ent2_pos_end):
-          ent2_mask[ent2_ind] = 1
-    
-        input_data.append(indexed_tokens)
-        input_data.append(segments_ids)
-        input_data.append(att_mask)
-        input_data.append(ent1_mask)
-        input_data.append(ent2_mask)
-        input_data.append(query_indexed_tokens)
-        input_data.append(query_segments_ids)
-        input_data.append(query_att_mask)
-    
-    
-        final_data_list.append(input_data)
-        sentence_count += 1
+            # Split the sentence into tokens with BERT tokenizer
+            splited_text = sentence.split('\t')
+            query_tokenized_text = tokenizer.tokenize(splited_text[1]) 
+            tokenized_text = tokenizer.tokenize(splited_text[2])
+            print(tokenized_text)
+            sentence_list.append((splited_text[2], splited_text[3]))
+            ent1_pos_st = tokenized_text.index('$')
+            ent1_pos_end = tokenized_text.index('$', ent1_pos_st+1)
+            
+            ent2_pos_st = tokenized_text.index('#')
+            ent2_pos_end = tokenized_text.index('#', ent2_pos_st+1)
+            print(ent1_pos_st, ent1_pos_end, ent2_pos_st, ent2_pos_end)
+        
+            if len(query_tokenized_text) > max_sentence_len:
+              query_tokenized_text = query_tokenized_text[:max_sentence_len] # If the length of the sentence is more than max length then truncate
+        
+        
+            if len(tokenized_text) > max_sentence_len:
+              tokenized_text = tokenized_text[:max_sentence_len] # If the length of the sentence is more than max length then truncate
+        
+            # Map the token strings to their vocabulary indeces.
+            query_indexed_tokens = tokenizer.convert_tokens_to_ids(query_tokenized_text)
+            # Mark each of the tokens as belonging to sentence "0".
+            query_segments_ids = [0] * len(query_tokenized_text)
+        
+            # Mask the sentence tokens with 1
+            query_att_mask = [1] * len(query_indexed_tokens)
+        
+            # padding the rest of the sequence length
+            query_padding_len = max_sentence_len - len(query_indexed_tokens)
+        
+            # Add the padded token to the indexed tokens
+            query_indexed_tokens = query_indexed_tokens + [0]*query_padding_len
+        
+            # Mask the padded tokens with 0
+            query_att_mask = query_att_mask + [0]*query_padding_len
+        
+            # Mark the padded tokens as belonging to sentence "0"
+            query_segments_ids = query_segments_ids + [0]*query_padding_len
+        
+        
+        
+            # Map the token strings to their vocabulary indeces.
+            indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
+            # Mark each of the tokens as belonging to sentence "0".
+            segments_ids = [0] * len(tokenized_text)
+            
+            # Mask the sentence tokens with 1
+            att_mask = [1] * len(indexed_tokens)
+        
+            # padding the rest of the sequence length
+            padding_len = max_sentence_len - len(indexed_tokens)
+        
+            # Add the padded token to the indexed tokens
+            indexed_tokens = indexed_tokens + [0]*padding_len
+        
+            # Mask the padded tokens with 0
+            att_mask = att_mask + [0]*padding_len
+        
+            # Mark the padded tokens as belonging to sentence "0"
+            segments_ids = segments_ids + [0]*padding_len
+        
+            # Initialize entity masks
+            ent1_mask = [0]*len(att_mask)
+            ent2_mask = [0]*len(att_mask)
+        
+            # Mark the entity masks with 1 in the entity positions
+            for ent1_ind in range(ent1_pos_st+1, ent1_pos_end):
+              ent1_mask[ent1_ind] = 1
+            print(ent1_mask)
+        
+            for ent2_ind in range(ent2_pos_st+1, ent2_pos_end):
+              ent2_mask[ent2_ind] = 1
+        
+            input_data.append(indexed_tokens)
+            input_data.append(segments_ids)
+            input_data.append(att_mask)
+            input_data.append(ent1_mask)
+            input_data.append(ent2_mask)
+            input_data.append(query_indexed_tokens)
+            input_data.append(query_segments_ids)
+            input_data.append(query_att_mask)
+        
+        
+            final_data_list.append(input_data)
+            sentence_count += 1
+        except ValueError:
+            exception_count += 1
+            print(exception_count)
     
     print(sentence_count)
     features_file = trained_model_output_file
