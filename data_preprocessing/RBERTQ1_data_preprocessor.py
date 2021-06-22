@@ -35,7 +35,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
             splited_text = sentence.split('\t')
             query_tokenized_text = tokenizer.tokenize(splited_text[1]) 
             tokenized_text = tokenizer.tokenize(splited_text[2])
-            print(tokenized_text)
+            #print(tokenized_text)
             sentence_list.append((splited_text[2], splited_text[3]))
             ent1_pos_st = tokenized_text.index('$')
             ent1_pos_end = tokenized_text.index('$', ent1_pos_st+1)
@@ -100,7 +100,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
             # Mark the entity masks with 1 in the entity positions
             for ent1_ind in range(ent1_pos_st+1, ent1_pos_end):
               ent1_mask[ent1_ind] = 1
-            print(ent1_mask)
+            #print(ent1_mask)
         
             for ent2_ind in range(ent2_pos_st+1, ent2_pos_end):
               ent2_mask[ent2_ind] = 1
