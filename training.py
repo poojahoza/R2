@@ -20,7 +20,7 @@ from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocess
 def training(final_dataset):
     
     config = BertConfig()
-    model = RBERTQ1(config=config)
+    model = RBERTQ1.from_pretrained(config=config)
     #print(model)
     print("Started with training")
 
