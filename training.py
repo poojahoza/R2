@@ -17,7 +17,7 @@ from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocess
 
 
 # check if a GPU is present in the machine, if yes then utilize it
-device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
 
 def training(final_dataset):
     
