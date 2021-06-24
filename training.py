@@ -26,7 +26,7 @@ def training(final_dataset):
     #print(model)
     print("Started with training")
 
-    trainloader = torch.utils.data.DataLoader(final_dataset, batch_size=16, shuffle=True, num_workers=2).to(device)
+    trainloader = torch.utils.data.DataLoader(final_dataset, batch_size=16, shuffle=True, num_workers=2)  
     #classes = ('0', '1')
     class_weights = torch.Tensor([4.5]).to(device)
     loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
