@@ -60,5 +60,5 @@ if __name__ == "__main__":
     parser.add_argument("--input")
     parser.add_argument("--output")
     args = parser.parse_args()
-    dataset = RBERTQ1_data_preprocessor(args.input, args.output).to(device)
+    dataset = RBERTQ1_data_preprocessor(args.input, args.output)
     training(dataset)
