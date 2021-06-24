@@ -31,8 +31,17 @@ def training(final_dataset):
     class_weights = torch.Tensor([4.5]).to(device)
     loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
     dataiter = iter(trainloader)
-    sample_features = dataiter.next().to(device)
+    sample_features = dataiter.next()
     labels = torch.Tensor([1]).to(device)
+    sample_features[0].to(device)
+    sample_features[1].to(device)
+    sample_features[2].to(device)
+    sample_features[3].to(device)
+    sample_features[4].to(device)
+    sample_features[5].to(device)
+    sample_features[6].to(device)
+    sample_features[7].to(device)
+    sample_features[8].to(device)
     optimizer = optim.Adam(sample_features, lr=2e-5, )
     
     for epoch in range(1):
