@@ -115,6 +115,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
             input_data.append(query_indexed_tokens)
             input_data.append(query_segments_ids)
             input_data.append(query_att_mask)
+            input_data.append([int(splited_text[3])])
         
         
             final_data_list.append(input_data)
@@ -140,6 +141,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
     query_indexed_tokens_tensor = torch.tensor([q_ind_tokens[5] for q_ind_tokens in final_data_list])
     query_segment_ids_tensor = torch.tensor([q_seg_ids[6] for q_seg_ids in final_data_list])
     query_att_mask_tensor = torch.tensor([q_attn[7] for q_attn in final_data_list])
+    labels_tensor = torch.tensor([labels[8] for labels in final_data_list])
     
     
     #print(ent1_mask_tensor.shape)
@@ -153,6 +155,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
         ent2_mask_tensor,
         query_indexed_tokens_tensor,
         query_segment_ids_tensor,
-        query_att_mask_tensor
+        query_att_mask_tensor,
+        labels_tensor
     )
     return final_dataset

@@ -16,21 +16,23 @@ from transformers import BertConfig
 from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocessor
 
 
+# check if a GPU is present in the machine, if yes then utilize it
+device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 def training(final_dataset):
     
     config = BertConfig()
-    model = RBERTQ1.from_pretrained(config=config)
+    model = RBERTQ1(config=config).to(device)
     #print(model)
     print("Started with training")
 
-    trainloader = torch.utils.data.DataLoader(final_dataset, batch_size=16, shuffle=True, num_workers=2)
+    trainloader = torch.utils.data.DataLoader(final_dataset, batch_size=16, shuffle=True, num_workers=2).to(device)
     #classes = ('0', '1')
-    class_weights = torch.Tensor([4.5, 1])
+    class_weights = torch.Tensor([4.5]).to(device)
     loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
     dataiter = iter(trainloader)
-    sample_features = dataiter.next()
-    labels = ['0','1']
+    sample_features = dataiter.next().to(device)
+    labels = torch.Tensor([1]).to(device)
     optimizer = optim.Adam(sample_features, lr=2e-5, )
     
     for epoch in range(1):
@@ -41,7 +43,7 @@ def training(final_dataset):
         optimizer.zero_grad()
     
         outputs = model(sample_features[0], sample_features[1], sample_features[2], [0, 1],  sample_features[3], sample_features[4], sample_features[5], sample_features[6], sample_features[7])
-        loss = loss_fn(outputs, labels)
+        loss = loss_fn(outputs, sample_features[8].type_as(outputs))
         loss.backward()
         optimizer.step()
     
@@ -58,5 +60,5 @@ if __name__ == "__main__":
     parser.add_argument("--input")
     parser.add_argument("--output")
     args = parser.parse_args()
-    dataset = RBERTQ1_data_preprocessor(args.input, args.output)
+    dataset = RBERTQ1_data_preprocessor(args.input, args.output).to(device)
     training(dataset)

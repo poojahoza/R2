@@ -60,8 +60,8 @@ class RBERTQ1(BertPreTrainedModel):
     bert_output = self.bert(indexed_tokens, attention_mask=attention_mask, token_type_ids=segment_ids)
     cls_output = bert_output[1]
     sequence_output = bert_output[0]
-    print(ent1_mask)
-    print(ent2_mask)
+    #print(ent1_mask)
+    #print(ent2_mask)
 
     q_bert_output = self.bert(query_indexed_tokens, attention_mask=q_attn_mask, token_type_ids=q_seg_ids)
     q_cls_output = q_bert_output[1]
@@ -71,12 +71,12 @@ class RBERTQ1(BertPreTrainedModel):
       
       ent_mask_modified = ent_mask.unsqueeze(1)
       ent_mask_tensor_len = ent_mask.sum(dim=1).unsqueeze(1)
-      print(ent_mask.shape)
-      print(ent_mask_tensor_len)
+      #print(ent_mask.shape)
+      #print(ent_mask_tensor_len)
       sum_tensor = (ent_mask_modified.float() @ ent_seq_output).squeeze(1)
-      print("---------------")
-      print(sum_tensor.float())
-      print(ent_mask_tensor_len.float())
+      #print("---------------")
+      #print(sum_tensor.float())
+      #print(ent_mask_tensor_len.float())
       ent_avg_tensor = sum_tensor.float()/ent_mask_tensor_len.float()
       return ent_avg_tensor
 
@@ -89,6 +89,7 @@ class RBERTQ1(BertPreTrainedModel):
     ent1_average_tensor = ent1_average_tensor * q_cls_output
     ent2_average_tensor = ent2_average_tensor * q_cls_output
 
+    self.config.num_labels = 1
     self.cls_fc_obj = FullyConnectedCLSLayer(self.config.hidden_size, self.config.hidden_size, self.config.hidden_dropout_prob)
     self.ent_fc_obj = FullyConnectedEntityLayer(self.config.hidden_size, self.config.hidden_size, self.config.hidden_dropout_prob)
     self.concatenated_fc_obj = FullyConnectedConcatenatedLayer(self.config.hidden_size*3, self.config.num_labels, self.config.hidden_dropout_prob)
