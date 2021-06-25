@@ -7,6 +7,7 @@ Created on Mon Jun 21 14:58:50 2021
 """
 import argparse
 import torch
+import os
 import torch.optim as optim
 import torch.nn as nn
 
@@ -61,6 +62,38 @@ class Training(object):
                 running_loss += loss.item()
         print("Finished training")
         return running_loss
+    
+    
+def load_preprocessed_data(preprocessed_data_path):
+    if os.path.exists(preprocessed_data_path):
+      print('in if')
+      final_data_list = torch.load(preprocessed_data_path)
+    else:
+      print('the file path does not exist')
+    
+    indexed_tokens_tensor = torch.tensor([ind_tokens[0] for ind_tokens in final_data_list])
+    segment_ids_tensor = torch.tensor([seg_ids[1] for seg_ids in final_data_list])
+    att_mask_tensor = torch.tensor([attn[2] for attn in final_data_list])
+    ent1_mask_tensor = torch.tensor([ent1_mask[3] for ent1_mask in final_data_list])
+    ent2_mask_tensor = torch.tensor([ent2_mask[4] for ent2_mask in final_data_list])
+    query_indexed_tokens_tensor = torch.tensor([q_ind_tokens[5] for q_ind_tokens in final_data_list])
+    query_segment_ids_tensor = torch.tensor([q_seg_ids[6] for q_seg_ids in final_data_list])
+    query_att_mask_tensor = torch.tensor([q_attn[7] for q_attn in final_data_list])
+    labels_tensor = torch.tensor([labels[8] for labels in final_data_list])
+    
+    final_dataset = torch.utils.data.TensorDataset(
+        indexed_tokens_tensor,
+        segment_ids_tensor,
+        att_mask_tensor,
+        ent1_mask_tensor,
+        ent2_mask_tensor,
+        query_indexed_tokens_tensor,
+        query_segment_ids_tensor,
+        query_att_mask_tensor,
+        labels_tensor
+    )
+    print("Finished loading Preprocessed data")
+    return final_dataset
 
 # =============================================================================
 # # check if a GPU is present in the machine, if yes then utilize it
@@ -131,4 +164,5 @@ if __name__ == "__main__":
         dataset = RBERTQ1_data_preprocessor(parser_arguments['input'], 
                                             parser_arguments['output'])
     if parser_arguments['subparser_name'] == "training":
-        Training(parser_arguments['preprocessedfile']).train()
+        data = load_preprocessed_data(parser_arguments['preprocessedfile'])
+        Training(data).train()
