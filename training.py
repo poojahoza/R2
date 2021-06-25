@@ -22,7 +22,7 @@ device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("
 def training(final_dataset):
     
     config = BertConfig()
-    model = RBERTQ1(config=config).to(device)
+    model = RBERTQ1(config=config, device=device).to(device)
     #print(model)
     print("Started with training")
 

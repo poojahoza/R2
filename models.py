@@ -49,12 +49,12 @@ class FullyConnectedConcatenatedLayer(nn.Module):
     return x
 
 class RBERTQ1(BertPreTrainedModel):
-  def __init__(self, config):
+  def __init__(self, config, device):
     super(RBERTQ1, self).__init__(config)
     self.config = config
     self.bert = BertModel.from_pretrained('bert-base-uncased',
                                   output_hidden_states = True, # Whether the model returns all hidden-states.
-                                  )
+                                  ).to(device)
     
   def forward(self, indexed_tokens, attention_mask, segment_ids, labels, ent1_mask, ent2_mask, query_indexed_tokens, q_attn_mask, q_seg_ids):
     bert_output = self.bert(indexed_tokens, attention_mask=attention_mask, token_type_ids=segment_ids)
