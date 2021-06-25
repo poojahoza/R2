@@ -21,18 +21,16 @@ device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("
 
 def training(final_dataset):
     
-    config = BertConfig()
-    model = RBERTQ1(config=config, device=device).to(device)
-    #print(model)
+    
     print("Started with training")
 
     trainloader = torch.utils.data.DataLoader(final_dataset, batch_size=16, shuffle=True, num_workers=2)  
     #classes = ('0', '1')
     class_weights = torch.Tensor([4.5]).to(device)
-    loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
+    
     dataiter = iter(trainloader)
     sample_features = dataiter.next()
-    labels = torch.Tensor([1]).to(device)
+    #labels = torch.Tensor([1]).to(device)
     sample_features[0].to(device)
     sample_features[1].to(device)
     sample_features[2].to(device)
@@ -42,13 +40,18 @@ def training(final_dataset):
     sample_features[6].to(device)
     sample_features[7].to(device)
     sample_features[8].to(device)
+    
+    config = BertConfig()
+    model = RBERTQ1(config=config, device=device).to(device)
+    #print(model)
+    loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
     optimizer = optim.Adam(sample_features, lr=2e-5, )
     
     for epoch in range(1):
     
       running_loss = 0.0
       for i, data in enumerate(trainloader):
-        inputs = data
+        #inputs = data
         optimizer.zero_grad()
     
         outputs = model(sample_features[0], sample_features[1], sample_features[2], [0, 1],  sample_features[3], sample_features[4], sample_features[5], sample_features[6], sample_features[7])
@@ -65,9 +68,17 @@ def training(final_dataset):
     print('Finished Training')
  
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="training")
-    parser.add_argument("--input")
-    parser.add_argument("--output")
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers()
+    preprocessing_parser = subparsers.add_parser("preprocessing")
+    training_parser = subparsers.add_parser("training")
+    preprocessing_parser.add_argument("--input")
+    preprocessing_parser.add_argument("--output")
+    training_parser.add_argument("--preprocessedfile", required=True)
+    training_parser.add_argument("--save")
     args = parser.parse_args()
-    dataset = RBERTQ1_data_preprocessor(args.input, args.output)
-    training(dataset)
+    
+    if args.preprocessing is not None and args.training is None:
+        dataset = RBERTQ1_data_preprocessor(args.input, args.output)
+    elif args.preprocessing is None and args.training is not None:
+        training(args.preprocessedfile)
