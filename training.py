@@ -131,4 +131,4 @@ if __name__ == "__main__":
         dataset = RBERTQ1_data_preprocessor(parser_arguments['input'], 
                                             parser_arguments['output'])
     if parser_arguments['subparser_name'] == "training":
-        training(parser_arguments['preprocessedfile'])
+        Training(parser_arguments['preprocessedfile']).train()
