@@ -69,7 +69,7 @@ def training(final_dataset):
  
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    subparsers = parser.add_subparsers()
+    subparsers = parser.add_subparsers(dest="subparser_name")
     preprocessing_parser = subparsers.add_parser("preprocessing")
     training_parser = subparsers.add_parser("training")
     preprocessing_parser.add_argument("--input")
@@ -79,8 +79,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
     parser_arguments = vars(args)
     
-    if 'preprocessing' in parser_arguments and parser_arguments['preprocessing']:
+    if parser_arguments['subparser_name'] == "preprocessing":
         dataset = RBERTQ1_data_preprocessor(parser_arguments['input'], 
                                             parser_arguments['output'])
-    elif 'training' in parser_arguments and parser_arguments['training']:
+    if parser_arguments['subparser_name'] == "training":
         training(parser_arguments['preprocessedfile'])
