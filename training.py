@@ -44,7 +44,8 @@ class Training(object):
         self.model.zero_grad()
         
         for epoch in range(1):
-            for data in enumerate(trainloader):
+            for i, data in enumerate(trainloader):
+                print(i)
                 self.model.train()
                 data = tuple(d.to(self.device) for d in data)
                 outputs = self.model(data[0], 
