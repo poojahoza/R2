@@ -77,8 +77,10 @@ if __name__ == "__main__":
     training_parser.add_argument("--preprocessedfile", required=True)
     training_parser.add_argument("--save")
     args = parser.parse_args()
+    parser_arguments = vars(args)
     
-    if args.preprocessing is not None and args.training is None:
-        dataset = RBERTQ1_data_preprocessor(args.input, args.output)
-    elif args.preprocessing is None and args.training is not None:
-        training(args.preprocessedfile)
+    if 'preprocessing' in parser_arguments and parser_arguments['preprocessing']:
+        dataset = RBERTQ1_data_preprocessor(parser_arguments['input'], 
+                                            parser_arguments['output'])
+    elif 'training' in parser_arguments and parser_arguments['training']:
+        training(parser_arguments['preprocessedfile'])
