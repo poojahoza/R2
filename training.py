@@ -19,23 +19,30 @@ from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocess
 
 class Training(object):
     
-    def __init__(self, dataset=None):
+    def __init__(self):
         
-        self.dataset = dataset
+        #self.dataset = dataset
         # check if a GPU is present in the machine, if yes then utilize it
         self.device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
         self.class_weights = torch.Tensor([4.5])
         
         self.config = BertConfig()
-        self.model = RBERTQ1(config=self.config).to(self.device)
+        self.model = RBERTQ1(config=self.config, device=self.device).to(self.device)
         #print(model)
         #self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         #optimizer = optim.Adam(sample_features, lr=2e-5, )
 
-    def train(self):
+    def save_model(self, output_model_dir):
+        torch.save(self.model, output_model_dir)
+        print("model saved")
+    
+    def load_model(self, model_dir):
+        self.model = torch.load(model_dir)
+    
+    def train(self, dataset=None, output_model_dir='./model'):
         
         print("Started training")
-        trainloader = torch.utils.data.DataLoader(self.dataset, batch_size=16, shuffle=True, num_workers=2)  
+        trainloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=True, num_workers=2)  
         model_parameters = [p for n, p in self.model.named_parameters()]
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
@@ -46,21 +53,24 @@ class Training(object):
         for epoch in range(1):
             for i, data in enumerate(trainloader):
                 print(i)
+                print(len(data[0]))
                 self.model.train()
-                data = tuple(d.to(self.device) for d in data)
+                labels = data[8]
+                data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
                 outputs = self.model(data[0], 
                                      data[1], 
                                      data[2], 
-                                     [1],  
                                      data[3], 
                                      data[4], 
                                      data[5], 
                                      data[6], 
                                      data[7])
-                loss = loss_fn(outputs, data[8].type_as(outputs))
+                outputs = outputs.to("cpu")
+                loss = loss_fn(outputs, labels.type_as(outputs))
                 loss.backward()
                 optimizer.step()
                 running_loss += loss.item()
+        self.save_model(output_model_dir)
         print("Finished training")
         return running_loss
     
@@ -166,4 +176,6 @@ if __name__ == "__main__":
                                             parser_arguments['output'])
     if parser_arguments['subparser_name'] == "training":
         data = load_preprocessed_data(parser_arguments['preprocessedfile'])
-        Training(data).train()
+        loss = Training().train(data, parser_arguments['save'])
+        print(loss)
+        
