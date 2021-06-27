@@ -48,7 +48,7 @@ class Training(object):
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
         running_loss = 0.0
         
-        #self.model.zero_grad()
+        self.model.zero_grad()
         
         for epoch in range(1):
             for i, data in enumerate(trainloader):
@@ -67,9 +67,10 @@ class Training(object):
                                      data[7])
                 outputs = outputs.to("cpu")
                 loss = loss_fn(outputs, labels.type_as(outputs))
-                optimizer.zero_grad()
+                #optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
+                self.model.zero_grad()
                 running_loss += loss.item()
         self.save_model(output_model_dir)
         print("Finished training")
