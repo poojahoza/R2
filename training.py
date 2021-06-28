@@ -53,7 +53,7 @@ class Training(object):
         self.model.zero_grad()
         
         total_preds = []
-        total_preds = total_preds.to("cpu")
+        #total_preds = total_preds.to("cpu")
         
         for epoch in range(total_epochs):
             self.model.train()
@@ -79,9 +79,9 @@ class Training(object):
                 loss.backward()
                 #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 optimizer.step()
-                #outputs=outputs.detach().cpu().numpy()
+                outputs=outputs.to("cpu").numpy()
                 total_preds.append([outputs, seqid])
-                total_preds = total_preds.to("cpu")
+                #total_preds = total_preds.to("cpu")
                 
                 running_loss += loss.item()
         self.save_model(output_model_dir)
