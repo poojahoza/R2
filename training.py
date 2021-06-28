@@ -78,7 +78,7 @@ class Training(object):
                 loss.backward()
                 #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 optimizer.step()
-                outputs=outputs.detach().cpu().numpy()
+                outputs=outputs.to('cpu')
                 total_preds.append([outputs, seqid])
                 
                 running_loss += loss.item()
