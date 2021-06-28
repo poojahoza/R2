@@ -101,7 +101,7 @@ class RBERTQ1(BertPreTrainedModel):
     cls_fc_obj = FullyConnectedCLSLayer(self.config.hidden_size, self.config.hidden_size, self.d, self.config.hidden_dropout_prob)
     ent_fc_obj = FullyConnectedEntityLayer(self.config.hidden_size, self.config.hidden_size, self.d, self.config.hidden_dropout_prob)
     concatenated_fc_obj = FullyConnectedConcatenatedLayer(self.config.hidden_size*3, self.config.num_labels, self.d, self.config.hidden_dropout_prob)
-    softmax = nn.Softmax(dim=1)
+    #softmax = nn.Softmax(dim=1)
 
     cls_fc_output = cls_fc_obj(cls_output)
     ent1_fc_output = ent_fc_obj(ent1_average_tensor)
