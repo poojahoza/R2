@@ -39,21 +39,22 @@ class Training(object):
     def load_model(self, model_dir):
         self.model = torch.load(model_dir)
     
-    def train(self, dataset=None, output_model_dir='./model'):
+    def train(self, dataset=None, output_model_dir='./model', batchsize=4, epochs=1):
         
         print("Started training")
-        trainloader = torch.utils.data.DataLoader(dataset, batch_size=4, shuffle=True, num_workers=2)  
+        trainloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=True, num_workers=2)  
         model_parameters = [p for n, p in self.model.named_parameters()]
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
         running_loss = 0.0
+        total_epochs = epochs
         
         
         #self.model.zero_grad()
         
         total_preds = []
         
-        for epoch in range(1):
+        for epoch in range(total_epochs):
             self.model.train()
             for i, data in enumerate(trainloader):
                 print(i)
@@ -69,17 +70,21 @@ class Training(object):
                                      data[5], 
                                      data[6], 
                                      data[7])
+                #push outputs to cpu
                 outputs = outputs.to("cpu")
                 loss = loss_fn(outputs, labels.type_as(outputs))
                 #optimizer.zero_grad()
                 loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.named_parameters(), 1.0)
+                #torch.nn.utils.clip_grad_norm_(self.model.named_parameters(), 1.0)
                 optimizer.step()
+                #outputs=outputs.detach().cpu().numpy()
+                total_preds.append(outputs)
                 
                 running_loss += loss.item()
         self.save_model(output_model_dir)
         print("Finished training")
-        return running_loss
+        avg_loss = running_loss/len(trainloader)
+        return avg_loss, total_preds
     
     
 def load_preprocessed_data(preprocessed_data_path):
@@ -174,6 +179,8 @@ if __name__ == "__main__":
     preprocessing_parser.add_argument("--input")
     preprocessing_parser.add_argument("--output")
     training_parser.add_argument("--preprocessedfile", required=True)
+    training_parser.add_argument("--batch-size")
+    training_parser.add_argument("--epochs")
     training_parser.add_argument("--save")
     args = parser.parse_args()
     parser_arguments = vars(args)
@@ -183,6 +190,9 @@ if __name__ == "__main__":
                                             parser_arguments['output'])
     if parser_arguments['subparser_name'] == "training":
         data = load_preprocessed_data(parser_arguments['preprocessedfile'])
-        loss = Training().train(data, parser_arguments['save'])
+        loss, preds = Training().train(data, 
+                                parser_arguments['save'], 
+                                parser_arguments['batch-size'],
+                                parser_arguments['epochs'])
         print(loss)
         
