@@ -61,6 +61,9 @@ class RBERTQ1(BertPreTrainedModel):
                                   )
     
   def forward(self, indexed_tokens, attention_mask, segment_ids, ent1_mask, ent2_mask, query_indexed_tokens, q_attn_mask, q_seg_ids):
+    for param in self.bert.parameters():
+        param.requires_grad = False
+      
     bert_output = self.bert(indexed_tokens, attention_mask=attention_mask, token_type_ids=segment_ids)
     cls_output = bert_output[1]
     sequence_output = bert_output[0]

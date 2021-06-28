@@ -48,13 +48,17 @@ class Training(object):
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
         running_loss = 0.0
         
-        self.model.zero_grad()
+        
+        #self.model.zero_grad()
+        
+        total_preds = []
         
         for epoch in range(1):
+            self.model.train()
             for i, data in enumerate(trainloader):
                 print(i)
                 print(len(data[0]))
-                self.model.train()
+                self.model.zero_grad()
                 labels = data[8]
                 data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
                 outputs = self.model(data[0], 
@@ -67,10 +71,11 @@ class Training(object):
                                      data[7])
                 outputs = outputs.to("cpu")
                 loss = loss_fn(outputs, labels.type_as(outputs))
-                optimizer.zero_grad()
+                #optimizer.zero_grad()
                 loss.backward()
+                torch.nn.utils.clip_grad_norm_(self.model.named_parameters(), 1.0)
                 optimizer.step()
-                #self.model.zero_grad()
+                
                 running_loss += loss.item()
         self.save_model(output_model_dir)
         print("Finished training")
