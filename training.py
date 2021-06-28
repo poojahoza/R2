@@ -179,7 +179,7 @@ if __name__ == "__main__":
     preprocessing_parser.add_argument("--input")
     preprocessing_parser.add_argument("--output")
     training_parser.add_argument("--preprocessedfile", required=True)
-    training_parser.add_argument("--batch-size")
+    training_parser.add_argument("--batchsize")
     training_parser.add_argument("--epochs")
     training_parser.add_argument("--save")
     args = parser.parse_args()
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         data = load_preprocessed_data(parser_arguments['preprocessedfile'])
         loss, preds = Training().train(data, 
                                 parser_arguments['save'], 
-                                parser_arguments['batch-size'],
+                                parser_arguments['batchsize'],
                                 parser_arguments['epochs'])
         print(loss)
         
