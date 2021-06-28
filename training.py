@@ -84,7 +84,7 @@ class Training(object):
                 #Assumption for the error: causes memory leak
                 #Solution: use deepcopy such as outputs=deepcopy(outputs.detch().cpu().numpy())
                 #outputs=deepcopy(outputs.detach().cpu().numpy())
-                outputs=outputs.to('cpu')
+                outputs=outputs.detach().to('cpu')
                 total_preds.append([outputs, seqid])
                 del outputs
                 del labels
