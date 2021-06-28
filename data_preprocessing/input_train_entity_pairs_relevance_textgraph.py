@@ -10,6 +10,13 @@ train_relevant_json = 'Documents/data/wt-expert-ratings.train.json'
 entity_pairs_txt_file = 'Documents/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
 output_train_entity_pairs_file = 'Documents/data/rbertq1-input.train.tsv'
 
+# =============================================================================
+# train_relevant_json = 'Documents/data/wt-expert-ratings.dev.json'
+# entity_pairs_txt_file = 'Documents/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
+# output_train_entity_pairs_file = 'Documents/data/rbertq1-input.dev.tsv'
+# =============================================================================
+
+
 import json
 
 train_data = []

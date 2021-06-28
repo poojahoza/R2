@@ -50,9 +50,10 @@ class Training(object):
         total_epochs = epochs
         
         
-        #self.model.zero_grad()
+        self.model.zero_grad()
         
         total_preds = []
+        total_preds = total_preds.to("cpu")
         
         for epoch in range(total_epochs):
             self.model.train()
@@ -61,6 +62,7 @@ class Training(object):
                 print(len(data[0]))
                 self.model.zero_grad()
                 labels = data[8]
+                seqid = data[9]
                 data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
                 outputs = self.model(data[0], 
                                      data[1], 
@@ -78,7 +80,8 @@ class Training(object):
                 #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 optimizer.step()
                 #outputs=outputs.detach().cpu().numpy()
-                total_preds.append(outputs)
+                total_preds.append([outputs, seqid])
+                total_preds = total_preds.to("cpu")
                 
                 running_loss += loss.item()
         self.save_model(output_model_dir)
@@ -103,6 +106,7 @@ def load_preprocessed_data(preprocessed_data_path):
     query_segment_ids_tensor = torch.tensor([q_seg_ids[6] for q_seg_ids in final_data_list])
     query_att_mask_tensor = torch.tensor([q_attn[7] for q_attn in final_data_list])
     labels_tensor = torch.tensor([labels[8] for labels in final_data_list])
+    seqid_tensor = torch.tensor([seqid[9] for seqid in final_data_list])
     
     final_dataset = torch.utils.data.TensorDataset(
         indexed_tokens_tensor,
@@ -113,7 +117,8 @@ def load_preprocessed_data(preprocessed_data_path):
         query_indexed_tokens_tensor,
         query_segment_ids_tensor,
         query_att_mask_tensor,
-        labels_tensor
+        labels_tensor,
+        seqid_tensor
     )
     print("Finished loading Preprocessed data")
     return final_dataset
@@ -195,4 +200,5 @@ if __name__ == "__main__":
                                 parser_arguments['batchsize'],
                                 parser_arguments['epochs'])
         print(loss)
+        print(preds[0])
         
