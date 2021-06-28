@@ -92,27 +92,27 @@ class RBERTQ1(BertPreTrainedModel):
     ent2_average_tensor = entity_average(sequence_output, ent2_mask)
 
     # element-wise multiplication of the query cls output with the sentence cls and entities
-    self.cls_output = cls_output * q_cls_output
-    self.ent1_average_tensor = ent1_average_tensor * q_cls_output
-    self.ent2_average_tensor = ent2_average_tensor * q_cls_output
+    cls_output = cls_output * q_cls_output
+    ent1_average_tensor = ent1_average_tensor * q_cls_output
+    ent2_average_tensor = ent2_average_tensor * q_cls_output
 
     self.config.num_labels = 1
-    self.cls_fc_obj = FullyConnectedCLSLayer(self.config.hidden_size, self.config.hidden_size, self.d, self.config.hidden_dropout_prob)
-    self.ent_fc_obj = FullyConnectedEntityLayer(self.config.hidden_size, self.config.hidden_size, self.d, self.config.hidden_dropout_prob)
-    self.concatenated_fc_obj = FullyConnectedConcatenatedLayer(self.config.hidden_size*3, self.config.num_labels, self.d, self.config.hidden_dropout_prob)
-    self.softmax = nn.Softmax(dim=1)
+    cls_fc_obj = FullyConnectedCLSLayer(self.config.hidden_size, self.config.hidden_size, self.d, self.config.hidden_dropout_prob)
+    ent_fc_obj = FullyConnectedEntityLayer(self.config.hidden_size, self.config.hidden_size, self.d, self.config.hidden_dropout_prob)
+    concatenated_fc_obj = FullyConnectedConcatenatedLayer(self.config.hidden_size*3, self.config.num_labels, self.d, self.config.hidden_dropout_prob)
+    softmax = nn.Softmax(dim=1)
 
-    self.cls_fc_output = self.cls_fc_obj(self.cls_output)
-    self.ent1_fc_output = self.ent_fc_obj(self.ent1_average_tensor)
-    self.ent2_fc_output = self.ent_fc_obj(self.ent2_average_tensor)
+    cls_fc_output = cls_fc_obj(cls_output)
+    ent1_fc_output = ent_fc_obj(ent1_average_tensor)
+    ent2_fc_output = ent_fc_obj(ent2_average_tensor)
 
-    self.concatenated_output = torch.cat([self.cls_fc_output, self.ent1_fc_output, self.ent2_fc_output], dim=1)
-    self.concatenated_fc_output = self.concatenated_fc_obj(self.concatenated_output)
+    concatenated_output = torch.cat([cls_fc_output, ent1_fc_output, ent2_fc_output], dim=1)
+    concatenated_fc_output = concatenated_fc_obj(concatenated_output)
     #self.softmax_output = self.softmax(self.concatenated_fc_output)
     #print("==============")
     #print(self.softmax_output.shape)
     #return self.softmax_output
-    return self.concatenated_fc_output
+    return concatenated_fc_output
 
 class RBERTQ2(BertPreTrainedModel):
   def __init__(self, config):
