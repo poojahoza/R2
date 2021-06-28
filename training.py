@@ -43,7 +43,7 @@ class Training(object):
         
         print("Started training")
         trainloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=True, num_workers=2)  
-        model_parameters = [p for n, p in self.model.named_parameters()]
+        model_parameters = [p for n, p in self.model.parameters()]
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
         running_loss = 0.0
@@ -75,7 +75,7 @@ class Training(object):
                 loss = loss_fn(outputs, labels.type_as(outputs))
                 #optimizer.zero_grad()
                 loss.backward()
-                #torch.nn.utils.clip_grad_norm_(self.model.named_parameters(), 1.0)
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 optimizer.step()
                 #outputs=outputs.detach().cpu().numpy()
                 total_preds.append(outputs)
