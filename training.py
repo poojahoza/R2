@@ -44,7 +44,7 @@ class Training(object):
     def train(self, dataset=None, output_model_dir='./model', batchsize=4, epochs=1):
         
         print("Started training")
-        trainloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=True, num_workers=2)  
+        trainloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
         model_parameters = [p for n, p in self.model.named_parameters()]
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
@@ -83,8 +83,8 @@ class Training(object):
                 #This causes runtimeError. 
                 #Assumption for the error: causes memory leak
                 #Solution: use deepcopy such as outputs=deepcopy(outputs.detch().cpu().numpy())
-                outputs=deepcopy(outputs.detach().cpu().numpy())
-                #outputs=outputs.to('cpu')
+                #outputs=deepcopy(outputs.detach().cpu().numpy())
+                outputs=outputs.to('cpu')
                 total_preds.append([outputs, seqid])
                 del outputs
                 del labels
