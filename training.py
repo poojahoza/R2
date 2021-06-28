@@ -11,6 +11,8 @@ import os
 import torch.optim as optim
 import torch.nn as nn
 
+from copy import deepcopy
+
 from models import RBERTQ1
 from transformers import BertConfig
 
@@ -78,8 +80,15 @@ class Training(object):
                 loss.backward()
                 #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 optimizer.step()
-                outputs=outputs.to('cpu')
+                #This causes runtimeError. 
+                #Assumption for the error: causes memory leak
+                #Solution: use deepcopy such as outputs=deepcopy(outputs.detch().cpu().numpy())
+                outputs=deepcopy(outputs.detach().cpu().numpy())
+                #outputs=outputs.to('cpu')
                 total_preds.append([outputs, seqid])
+                del outputs
+                del labels
+                del seqid
                 
                 running_loss += loss.item()
         self.save_model(output_model_dir)
