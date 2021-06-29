@@ -10,11 +10,11 @@ import torch
 import os
 import torch.optim as optim
 import torch.nn as nn
-
-from copy import deepcopy
+import numpy as np
 
 from models import RBERTQ1
 from transformers import BertConfig
+from sklearn.utils.class_weight import compute_class_weight
 
 from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocessor
 
@@ -26,10 +26,10 @@ class Training(object):
         #self.dataset = dataset
         # check if a GPU is present in the machine, if yes then utilize it
         self.device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
-        self.class_weights = torch.Tensor([4.5])
         
         self.config = BertConfig()
         self.model = RBERTQ1(config=self.config, device=self.device).to(self.device)
+        #self.class_weights = torch.Tensors([4.5])
         #print(model)
         #self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         #optimizer = optim.Adam(sample_features, lr=2e-5, )
@@ -41,12 +41,20 @@ class Training(object):
     def load_model(self, model_dir):
         self.model = torch.load(model_dir)
     
-    def train(self, dataset=None, output_model_dir='./model', batchsize=4, epochs=1):
+    def train(self, dataset=None, output_model_dir='./model', batchsize=4, epochs=1, labels_tensr=None):
         
         print("Started training")
+        #num_workers=0 because if it is not zero it causes RuntimeError: received 0 items of ancdata
+        #at the below line when using the preprocessed data rbertq1_preprocessed_v1
+        #Solution found from https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999
+        # https://github.com/pytorch/pytorch/issues/973
         trainloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
         model_parameters = [p for n, p in self.model.named_parameters()]
-        loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
+        x_dim = list(labels_tensr.size())[0]
+        reshaped_label_tensr = torch.reshape(labels_tensr,(x_dim,))
+        class_weights = compute_class_weight('balanced', np.unique(reshaped_label_tensr), reshaped_label_tensr.numpy())
+        class_weights = torch.Tensor(class_weights)
+        loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
         running_loss = 0.0
         total_epochs = epochs
@@ -80,10 +88,10 @@ class Training(object):
                 loss.backward()
                 #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
                 optimizer.step()
-                #This causes runtimeError. 
-                #Assumption for the error: causes memory leak
-                #Solution: use deepcopy such as outputs=deepcopy(outputs.detch().cpu().numpy())
-                #outputs=deepcopy(outputs.detach().cpu().numpy())
+                #Using detach().to('cpu') as the utilization of gpu memory increase with
+                #every iteration. 
+                #Assumed reason: the gradients of the predictions i.e. outputs when appending
+                #to the total_preds is causing the increase in utilization of gpu memory
                 outputs=outputs.detach().to('cpu')
                 total_preds.append([outputs, seqid])
                 del outputs
@@ -128,7 +136,8 @@ def load_preprocessed_data(preprocessed_data_path):
         seqid_tensor
     )
     print("Finished loading Preprocessed data")
-    return final_dataset
+    print(labels_tensor.shape)
+    return final_dataset, labels_tensor
 
 # =============================================================================
 # # check if a GPU is present in the machine, if yes then utilize it
@@ -201,11 +210,12 @@ if __name__ == "__main__":
         dataset = RBERTQ1_data_preprocessor(parser_arguments['input'], 
                                             parser_arguments['output'])
     if parser_arguments['subparser_name'] == "training":
-        data = load_preprocessed_data(parser_arguments['preprocessedfile'])
+        data, labels = load_preprocessed_data(parser_arguments['preprocessedfile'])
         loss, preds = Training().train(data, 
                                 parser_arguments['save'], 
                                 parser_arguments['batchsize'],
-                                parser_arguments['epochs'])
+                                parser_arguments['epochs'],
+                                labels)
         print(loss)
         print(preds[0])
         
