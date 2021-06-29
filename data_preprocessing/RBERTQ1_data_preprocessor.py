@@ -115,7 +115,10 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
             input_data.append(query_indexed_tokens)
             input_data.append(query_segments_ids)
             input_data.append(query_att_mask)
-            input_data.append([int(splited_text[3])])
+            if int(splited_text[3]) == 0:
+                input_data.append([1 0]) #not relevant
+            else:
+                input_data.append([0 1]) #relevant
             input_data.append([int(splited_text[0])])
         
         
