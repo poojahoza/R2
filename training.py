@@ -58,7 +58,7 @@ class Training(object):
         x_dim = list(labels_tensr.size())[0]
         reshaped_label_tensr = torch.reshape(labels_tensr,(x_dim,))
         class_weights = compute_class_weight('balanced', np.unique(reshaped_label_tensr), reshaped_label_tensr.numpy())
-        class_weights = torch.Tensor(class_weights[1])
+        class_weights = torch.Tensor([class_weights[1]])
         print(class_weights)
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
