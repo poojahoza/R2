@@ -97,7 +97,7 @@ class RBERTQ1(BertPreTrainedModel):
     ent1_average_tensor = ent1_average_tensor * q_cls_output
     ent2_average_tensor = ent2_average_tensor * q_cls_output
 
-    #self.config.num_labels = 1
+    self.config.num_labels = 1
     cls_fc_obj = FullyConnectedCLSLayer(self.config.hidden_size, self.config.hidden_size, self.d, self.config.hidden_dropout_prob)
     ent_fc_obj = FullyConnectedEntityLayer(self.config.hidden_size, self.config.hidden_size, self.d, self.config.hidden_dropout_prob)
     concatenated_fc_obj = FullyConnectedConcatenatedLayer(self.config.hidden_size*3, self.config.num_labels, self.d, self.config.hidden_dropout_prob)

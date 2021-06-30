@@ -40,6 +40,9 @@ class Training(object):
     
     def load_model(self, model_dir):
         self.model = torch.load(model_dir)
+        
+    def evaluate(self):
+        pass
     
     def train(self, dataset=None, output_model_dir='./model', batchsize=4, epochs=1, labels_tensr=None):
         
@@ -50,11 +53,13 @@ class Training(object):
         # https://github.com/pytorch/pytorch/issues/973
         trainloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
         model_parameters = [p for n, p in self.model.named_parameters()]
+        
+        # Reshaping the labels tensor from 1 dimension to 2 to calculate the class weights
         x_dim = list(labels_tensr.size())[0]
         reshaped_label_tensr = torch.reshape(labels_tensr,(x_dim,))
         class_weights = compute_class_weight('balanced', np.unique(reshaped_label_tensr), reshaped_label_tensr.numpy())
-        class_weights = torch.Tensor(class_weights)
-        loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
+        #class_weights = torch.Tensor(class_weights)
+        loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights[1])
         optimizer = optim.Adam(model_parameters, lr=2e-5, )
         running_loss = 0.0
         total_epochs = epochs
