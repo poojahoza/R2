@@ -187,7 +187,7 @@ class Training(object):
             
             if eval_loss < best_valid_loss:
                 best_valid_loss = eval_loss
-                torch.save(self.model, './models/best_models.pth')
+                #torch.save(self.model, './models/best_models.pth')
 
             train_losses.append(train_loss)
             eval_losses.append(eval_loss)
@@ -195,6 +195,8 @@ class Training(object):
             # print("Training loss : {0}".format(train_loss))
             # print("Evaluation loss : {0}".format(eval_loss))
         
+        print(train_losses)
+        print(eval_losses)
         print("Finished training and evaluation")
     
     
