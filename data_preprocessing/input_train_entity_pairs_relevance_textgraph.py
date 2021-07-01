@@ -6,15 +6,13 @@ Created on Sat Jun 19 16:43:16 2021
 @author: poojaoza
 """
 
-train_relevant_json = 'Documents/data/wt-expert-ratings.train.json'
-entity_pairs_txt_file = 'Documents/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
-output_train_entity_pairs_file = 'Documents/data/rbertq1-input.train.tsv'
-
-# =============================================================================
-# train_relevant_json = 'Documents/data/wt-expert-ratings.dev.json'
+# train_relevant_json = 'Documents/data/wt-expert-ratings.train.json'
 # entity_pairs_txt_file = 'Documents/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
-# output_train_entity_pairs_file = 'Documents/data/rbertq1-input.dev.tsv'
-# =============================================================================
+# output_train_entity_pairs_file = 'Documents/data/rbertq1-input.train.tsv'
+
+train_relevant_json = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/wt-expert-ratings.dev.json'
+entity_pairs_txt_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
+output_train_entity_pairs_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/rbertq1-input.dev.tsv'
 
 
 import json
@@ -51,8 +49,9 @@ for item in train_data:
       relevancy = "0"
     if doc['uuid'] in entity_pairs_data:
         for entity_pair in entity_pairs_data[doc['uuid']]:
-          train_data_query.append(str(train_data_seq_id)+"\t"+query_text+"\t"+entity_pair+"\t"+relevancy+"\n")
-          train_data_seq_id += 1
+            qid_uuid = item['qid']+'*'+doc['uuid']
+            train_data_query.append(str(train_data_seq_id)+"\t"+query_text+"\t"+entity_pair+"\t"+relevancy+"\t"+qid_uuid+"\n")
+            train_data_seq_id += 1
 
 with open(output_train_entity_pairs_file, 'w') as output_file:
   output_file.writelines(train_data_query)

@@ -41,44 +41,25 @@ class Training(object):
     def load_model(self, model_dir):
         self.model = torch.load(model_dir)
         
-    def evaluate(self):
-        pass
-    
-    def train(self, dataset=None, output_model_dir='./model', batchsize=4, epochs=1, labels_tensr=None):
+    def evaluate(self, evalloader, loss_fn):
+        #print("Start Evaluation....")
+        self.model.eval()
         
-        print("Started training")
-        #num_workers=0 because if it is not zero it causes RuntimeError: received 0 items of ancdata
-        #at the below line when using the preprocessed data rbertq1_preprocessed_v1
-        #Solution found from https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999
-        # https://github.com/pytorch/pytorch/issues/973
-        trainloader = torch.utils.data.DataLoader(dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
-        model_parameters = [p for n, p in self.model.named_parameters()]
-        
-        # Reshaping the labels tensor from 1 dimension to 2 to calculate the class weights
-        x_dim = list(labels_tensr.size())[0]
-        reshaped_label_tensr = torch.reshape(labels_tensr,(x_dim,))
-        class_weights = compute_class_weight('balanced', np.unique(reshaped_label_tensr), reshaped_label_tensr.numpy())
-        class_weights = torch.Tensor([class_weights[1]])
-        print(class_weights)
-        loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
-        optimizer = optim.Adam(model_parameters, lr=2e-5, )
-        running_loss = 0.0
-        total_epochs = epochs
-        
-        
-        self.model.zero_grad()
-        
+        total_loss = 0.0
         total_preds = []
         
-        for epoch in range(total_epochs):
-            self.model.train()
-            for i, data in enumerate(trainloader):
-                print(i)
-                print(len(data[0]))
-                self.model.zero_grad()
-                labels = data[8]
-                seqid = data[9]
-                data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
+        for i, data in enumerate(evalloader):
+            
+            # Progress update every 500 batches.
+            if i % 500 == 0 and not i == 0:
+              # Report progress.
+              print(' Eval Batch {:>5,}  of  {:>5,}.'.format(i, len(evalloader)))
+              
+            labels = data[8]
+            seqid = data[9]
+            data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
+            
+            with torch.no_grad():
                 outputs = self.model(data[0], 
                                      data[1], 
                                      data[2], 
@@ -90,25 +71,126 @@ class Training(object):
                 #push outputs to cpu
                 outputs = outputs.to("cpu")
                 loss = loss_fn(outputs, labels.type_as(outputs))
-                #optimizer.zero_grad()
-                loss.backward()
-                #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
-                optimizer.step()
-                #Using detach().to('cpu') as the utilization of gpu memory increase with
-                #every iteration. 
-                #Assumed reason: the gradients of the predictions i.e. outputs when appending
-                #to the total_preds is causing the increase in utilization of gpu memory
-                outputs=outputs.detach().to('cpu')
-                total_preds.append([outputs, seqid])
-                del outputs
-                del labels
-                del seqid
                 
-                running_loss += loss.item()
+                total_loss += loss.item()
+                
+                outputs = outputs.detach().to('cpu')
+                outputs = torch.sigmoid(outputs)
+                total_preds.append([outputs, seqid])
+        avg_loss = total_loss/len(evalloader)
+        total_preds = np.concatenate(total_preds, axis=0)
+        
+        return avg_loss, total_preds
+    
+    def train(self, trainloader, loss_fn, optimizer, output_model_dir):
+        self.model.train()
+        
+        running_loss = 0.0
+        total_preds = []
+        
+        for i, data in enumerate(trainloader):
+            #print(i)
+            #print(len(data[0]))
+            
+            # Progress update every 500 batches.
+            if i % 500 == 0 and not i == 0:
+              # Report progress.
+              print(' Train Batch {:>5,}  of  {:>5,}.'.format(i, len(trainloader)))
+      
+            self.model.zero_grad()
+            labels = data[8]
+            seqid = data[9]
+            data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
+            outputs = self.model(data[0], 
+                                 data[1], 
+                                 data[2], 
+                                 data[3], 
+                                 data[4], 
+                                 data[5], 
+                                 data[6], 
+                                 data[7])
+            #push outputs to cpu
+            outputs = outputs.to("cpu")
+            loss = loss_fn(outputs, labels.type_as(outputs))
+            #optimizer.zero_grad()
+            loss.backward()
+            #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
+            optimizer.step()
+            #Using detach().to('cpu') as the utilization of gpu memory increase with
+            #every iteration. 
+            #Assumed reason: the gradients of the predictions i.e. outputs when appending
+            #to the total_preds is causing the increase in utilization of gpu memory
+            outputs=outputs.detach().to('cpu')
+            total_preds.append([outputs, seqid])
+            del outputs
+            del labels
+            del seqid
+            
+            running_loss += loss.item()
         self.save_model(output_model_dir)
-        print("Finished training")
+        #print("Finished training")
         avg_loss = running_loss/len(trainloader)
         return avg_loss, total_preds
+        
+    
+    def train_wrapper(self, train_dataset=None, 
+                      output_model_dir='./model', 
+                      batchsize=4, 
+                      epochs=1, 
+                      labels_tensr=None,
+                      eval_dataset=None):
+        
+        print("Started training")
+        #num_workers=0 because if it is not zero it causes RuntimeError: received 0 items of ancdata
+        #at the below line when using the preprocessed data rbertq1_preprocessed_v1
+        #Solution found from https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999
+        # https://github.com/pytorch/pytorch/issues/973
+        trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
+        #model_parameters = [p for n, p in self.model.named_parameters()]
+        
+        evalloader = torch.utils.data.DataLoader(eval_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
+        
+        # Reshaping the labels tensor from 1 dimension to 2 to calculate the class weights
+        x_dim = list(labels_tensr.size())[0]
+        reshaped_label_tensr = torch.reshape(labels_tensr,(x_dim,))
+        class_weights = compute_class_weight('balanced', np.unique(reshaped_label_tensr), reshaped_label_tensr.numpy())
+        class_weights = torch.Tensor([class_weights[1]])
+        print(class_weights)
+        loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
+        optimizer = optim.Adam(self.model.parameters(), lr=2e-5, )
+        
+        total_epochs = epochs
+        
+        
+        self.model.zero_grad()
+        
+        train_losses = []
+        eval_losses = []
+        
+        # set initial loss to infinite
+        best_valid_loss = float('inf')
+        
+        
+        for epoch in range(total_epochs):
+            print("Processing epoch : {0}".format(epoch))
+            
+            #train model
+            train_loss, _ = self.train(trainloader, loss_fn, optimizer, output_model_dir)
+            
+            #validate model
+            eval_loss, _ = self.evaluate(evalloader, loss_fn)
+            
+            if eval_loss < best_valid_loss:
+                best_valid_loss = eval_loss
+                torch.save(self.model, './models/best_models.pth')
+
+            train_losses.append(train_loss)
+            eval_losses.append(eval_loss)
+
+            print("Training loss : {0}".format(train_loss))
+            print("Evaluation loss : {0}".format(eval_loss))
+        
+        print("Finished training and evaluation")
     
     
 def load_preprocessed_data(preprocessed_data_path):
@@ -205,7 +287,8 @@ if __name__ == "__main__":
     training_parser = subparsers.add_parser("training")
     preprocessing_parser.add_argument("--input")
     preprocessing_parser.add_argument("--output")
-    training_parser.add_argument("--preprocessedfile", required=True)
+    training_parser.add_argument("--trainpreprocessedfile", required=True)
+    training_parser.add_argument("--evalpreprocessedfile", required=True)
     training_parser.add_argument("--batchsize", type=int)
     training_parser.add_argument("--epochs", type=int)
     training_parser.add_argument("--save")
@@ -216,12 +299,14 @@ if __name__ == "__main__":
         dataset = RBERTQ1_data_preprocessor(parser_arguments['input'], 
                                             parser_arguments['output'])
     if parser_arguments['subparser_name'] == "training":
-        data, labels = load_preprocessed_data(parser_arguments['preprocessedfile'])
-        loss, preds = Training().train(data, 
+        traindata, trainlabels = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
+        evaldata, labels = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
+        loss, preds = Training().train_wrapper(traindata, 
                                 parser_arguments['save'], 
                                 parser_arguments['batchsize'],
                                 parser_arguments['epochs'],
-                                labels)
+                                trainlabels,
+                                evaldata)
         print(loss)
         print(preds[0])
         
