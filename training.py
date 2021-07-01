@@ -42,16 +42,17 @@ class Training(object):
         self.model = torch.load(model_dir)
         
     def evaluate(self, evalloader, loss_fn):
-        #print("Start Evaluation....")
+        print("Start Evaluation....")
         self.model.eval()
         
         total_loss = 0.0
         total_preds = []
         
         for i, data in enumerate(evalloader):
+            print(".")
             
             # Progress update every 500 batches.
-            if i % 500 == 0 and not i == 0:
+            if i % 50 == 0 and not i == 0:
               # Report progress.
               print(' Eval Batch {:>5,}  of  {:>5,}.'.format(i, len(evalloader)))
               
@@ -89,11 +90,12 @@ class Training(object):
         total_preds = []
         
         for i, data in enumerate(trainloader):
+            print(".")
             #print(i)
             #print(len(data[0]))
             
             # Progress update every 500 batches.
-            if i % 500 == 0 and not i == 0:
+            if i % 50 == 0 and not i == 0:
               # Report progress.
               print(' Train Batch {:>5,}  of  {:>5,}.'.format(i, len(trainloader)))
       
