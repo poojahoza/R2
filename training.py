@@ -79,7 +79,7 @@ class Training(object):
                 outputs = torch.sigmoid(outputs)
                 total_preds.append([outputs, seqid])
         avg_loss = total_loss/len(evalloader)
-        total_preds = np.concatenate(total_preds, axis=0)
+        #total_preds = np.concatenate(total_preds, axis=0)
         
         return avg_loss, total_preds
     
@@ -182,6 +182,9 @@ class Training(object):
             #validate model
             eval_loss, _ = self.evaluate(evalloader, loss_fn)
             
+            print("Training loss : {0}".format(train_loss))
+            print("Evaluation loss : {0}".format(eval_loss))
+            
             if eval_loss < best_valid_loss:
                 best_valid_loss = eval_loss
                 torch.save(self.model, './models/best_models.pth')
@@ -189,8 +192,8 @@ class Training(object):
             train_losses.append(train_loss)
             eval_losses.append(eval_loss)
 
-            print("Training loss : {0}".format(train_loss))
-            print("Evaluation loss : {0}".format(eval_loss))
+            # print("Training loss : {0}".format(train_loss))
+            # print("Evaluation loss : {0}".format(eval_loss))
         
         print("Finished training and evaluation")
     
