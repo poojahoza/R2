@@ -59,8 +59,8 @@ class RBERTQ1(BertPreTrainedModel):
     self.bert = BertModel.from_pretrained('bert-base-uncased',
                                   output_hidden_states = True, # Whether the model returns all hidden-states.
                                   )
-    for param in self.bert.parameters():
-        param.requires_grad = False
+    # for param in self.bert.parameters():
+    #     param.requires_grad = False
     
   def forward(self, indexed_tokens, attention_mask, segment_ids, ent1_mask, ent2_mask, query_indexed_tokens, q_attn_mask, q_seg_ids):
     
