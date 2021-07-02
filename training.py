@@ -115,6 +115,7 @@ class Training(object):
             outputs = outputs.to("cpu")
             loss = loss_fn(outputs, labels.type_as(outputs))
             print("batch : {0} loss : {1}".format(i, loss))
+            batch_train_losses = batch_train_losses.detach().to('cpu')
             batch_train_losses.append([i,loss])
             #optimizer.zero_grad()
             loss.backward()
