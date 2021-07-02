@@ -115,8 +115,8 @@ class Training(object):
             outputs = outputs.to("cpu")
             loss = loss_fn(outputs, labels.type_as(outputs))
             print("batch : {0} loss : {1}".format(i, loss))
-            batch_train_losses = batch_train_losses.detach().to('cpu')
-            batch_train_losses.append([i,loss])
+            #batch_train_losses = batch_train_losses.to('cpu')
+            #batch_train_losses.append([i,loss])
             #optimizer.zero_grad()
             loss.backward()
             #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
@@ -134,7 +134,7 @@ class Training(object):
             running_loss += loss.item()
         self.save_model(output_model_dir)
         #print("Finished training")
-        pd.DataFrame(batch_train_losses).to_csv('1peoch_batch_lossses.csv', header=None, index=None)
+        #pd.DataFrame(batch_train_losses).to_csv('1peoch_batch_lossses.csv', header=None, index=None)
         avg_loss = running_loss/len(trainloader)
         return avg_loss, total_preds
         
