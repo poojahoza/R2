@@ -11,6 +11,7 @@ import os
 import torch.optim as optim
 import torch.nn as nn
 import numpy as np
+import pandas as pd
 
 from models import RBERTQ1
 from transformers import BertConfig
@@ -83,21 +84,20 @@ class Training(object):
         
         return avg_loss, total_preds
     
-    def train(self, trainloader, loss_fn, optimizer, output_model_dir):
+    def train(self, trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses):
         self.model.train()
         
         running_loss = 0.0
         total_preds = []
         
         for i, data in enumerate(trainloader):
-            print(".")
             #print(i)
             #print(len(data[0]))
             
             # Progress update every 500 batches.
-            if i % 50 == 0 and not i == 0:
-              # Report progress.
-              print(' Train Batch {:>5,}  of  {:>5,}.'.format(i, len(trainloader)))
+            # if i % 50 == 0 and not i == 0:
+            #   # Report progress.
+            #   print(' Train Batch {:>5,}  of  {:>5,}.'.format(i, len(trainloader)))
       
             self.model.zero_grad()
             labels = data[8]
@@ -114,6 +114,8 @@ class Training(object):
             #push outputs to cpu
             outputs = outputs.to("cpu")
             loss = loss_fn(outputs, labels.type_as(outputs))
+            print("batch : {0} loss : {1}".format(i, loss))
+            batch_train_losses.append([i,loss])
             #optimizer.zero_grad()
             loss.backward()
             #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
@@ -131,6 +133,7 @@ class Training(object):
             running_loss += loss.item()
         self.save_model(output_model_dir)
         #print("Finished training")
+        pd.DataFrame(batch_train_losses).to_csv('1peoch_batch_lossses.csv', header=None, index=None)
         avg_loss = running_loss/len(trainloader)
         return avg_loss, total_preds
         
@@ -168,6 +171,7 @@ class Training(object):
         
         train_losses = []
         eval_losses = []
+        batch_train_losses = []
         
         # set initial loss to infinite
         best_valid_loss = float('inf')
@@ -177,7 +181,7 @@ class Training(object):
             print("Processing epoch : {0}".format(epoch))
             
             #train model
-            train_loss, _ = self.train(trainloader, loss_fn, optimizer, output_model_dir)
+            train_loss, _ = self.train(trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses)
             
             #validate model
             eval_loss, _ = self.evaluate(evalloader, loss_fn)
