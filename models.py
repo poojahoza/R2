@@ -20,8 +20,8 @@ class FullyConnectedEntityLayer(nn.Module):
     self.linear = self.linear.to(device)
 
   def forward(self, x):
-    x = self.activation(x)
     x = self.dropout(x)
+    x = self.activation(x)
     x = self.linear(x)
     return x
 
@@ -34,8 +34,8 @@ class FullyConnectedCLSLayer(nn.Module):
     self.linear = self.linear.to(device)
 
   def forward(self, x):
-    x = self.activation(x)
     x = self.dropout(x)
+    x = self.activation(x)
     x = self.linear(x)
     return x
 
@@ -44,17 +44,11 @@ class FullyConnectedConcatenatedLayer(nn.Module):
     super(FullyConnectedConcatenatedLayer, self).__init__()
     self.dropout = nn.Dropout(dropout_rate)
     self.linear1 = nn.Linear(input_tensor, output_tensor)
-    self.linear2 = nn.Linear(input_tensor, output_tensor)
-    self.linear3 = nn.Linear(input_tensor, output_tensor)
     self.linear1 = self.linear1.to(device)
-    self.linear2 = self.linear2.to(device)
-    self.linear3 = self.linear3.to(device)
 
   def forward(self, x):
     x = self.dropout(x)
     x = self.linear1(x)
-    x = self.linear2(x)
-    x = self.linear3(x)
     return x
 
 class RBERTQ1(BertPreTrainedModel):
