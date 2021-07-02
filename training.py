@@ -163,7 +163,7 @@ class Training(object):
         class_weights = torch.Tensor([class_weights[1]])
         print(class_weights)
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
-        optimizer = optim.Adam(self.model.parameters(), lr=2e-5, )
+        optimizer = optim.AdamW(self.model.parameters(), lr=2e-5, eps = 1e-8)
         
         total_epochs = epochs
         
