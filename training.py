@@ -48,7 +48,7 @@ class Training(object):
         
     def test(self, train_dataset, eval_dataset, saved_model, batchsize):
         self.model = self.load_model(saved_model)
-        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
+        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
         #model_parameters = [p for n, p in self.model.named_parameters()]
         
         #eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
