@@ -6,13 +6,13 @@ Created on Sat Jun 19 16:43:16 2021
 @author: poojaoza
 """
 
-# train_relevant_json = 'Documents/data/wt-expert-ratings.train.json'
-# entity_pairs_txt_file = 'Documents/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
-# output_train_entity_pairs_file = 'Documents/data/rbertq1-input.train.tsv'
+train_relevant_json = 'Documents/data/wt-expert-ratings.train.json'
+entity_pairs_txt_file = 'Documents/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
+output_train_entity_pairs_file = 'Documents/data/rbertq1-input.train.tsv'
 
-train_relevant_json = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/wt-expert-ratings.dev.json'
-entity_pairs_txt_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
-output_train_entity_pairs_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/rbertq1-input.dev.tsv'
+# train_relevant_json = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/wt-expert-ratings.dev.json'
+# entity_pairs_txt_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
+# output_train_entity_pairs_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/rbertq1-input.dev.tsv'
 
 
 import json
