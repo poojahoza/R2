@@ -117,6 +117,7 @@ def RBERTQ1_data_preprocessor(input_file, trained_model_output_file):
             input_data.append(query_att_mask)
             input_data.append([int(splited_text[3])])
             input_data.append([int(splited_text[0])])
+            input_data.append([splited_text[4]])
         
         
             final_data_list.append(input_data)
