@@ -42,6 +42,50 @@ class Training(object):
     def load_model(self, model_dir):
         self.model = torch.load(model_dir)
         
+    def ranking(self, model_output_data, output_predict_file):
+        for pred in model_output_data:
+            print(pred)
+        
+    def test(self, train_dataset, eval_dataset, saved_model, batchsize):
+        self.model = self.load_model(saved_model)
+        train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
+        #model_parameters = [p for n, p in self.model.named_parameters()]
+        
+        #eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
+        self.model.eval()
+        
+        total_preds = []
+        
+        for i, data in enumerate(train_dataloader):
+            print(".")
+            
+            # Progress update every 500 batches.
+            if i % 50 == 0 and not i == 0:
+              # Report progress.
+              print(' Eval Batch {:>5,}  of  {:>5,}.'.format(i, len(train_dataloader)))
+              
+            labels = data[8]
+            seqid = data[9]
+            data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
+            
+            with torch.no_grad():
+                outputs = self.model(data[0], 
+                                     data[1], 
+                                     data[2], 
+                                     data[3], 
+                                     data[4], 
+                                     data[5], 
+                                     data[6], 
+                                     data[7])
+                outputs = outputs.detach().to('cpu')
+                outputs = torch.sigmoid(outputs)
+                total_preds.append([outputs, seqid, labels])
+        
+        #total_preds = np.concatenate(total_preds, axis=0)
+        
+        return total_preds
+
+    
     def evaluate(self, evalloader, loss_fn):
         print("Start Evaluation....")
         self.model.eval()
@@ -78,7 +122,7 @@ class Training(object):
                 
                 outputs = outputs.detach().to('cpu')
                 outputs = torch.sigmoid(outputs)
-                total_preds.append([outputs, seqid])
+                total_preds.append([outputs, seqid, labels])
         avg_loss = total_loss/len(evalloader)
         #total_preds = np.concatenate(total_preds, axis=0)
         
@@ -126,7 +170,7 @@ class Training(object):
             #Assumed reason: the gradients of the predictions i.e. outputs when appending
             #to the total_preds is causing the increase in utilization of gpu memory
             outputs=outputs.detach().to('cpu')
-            total_preds.append([outputs, seqid])
+            total_preds.append([outputs, seqid, labels])
             del outputs
             del labels
             del seqid
@@ -182,10 +226,10 @@ class Training(object):
             print("Processing epoch : {0}".format(epoch))
             
             #train model
-            train_loss, _ = self.train(trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses)
+            train_loss, train_preds = self.train(trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses)
             
             #validate model
-            eval_loss, _ = self.evaluate(evalloader, loss_fn)
+            eval_loss, eval_preds = self.evaluate(evalloader, loss_fn)
             
             print("Training loss : {0}".format(train_loss))
             print("Evaluation loss : {0}".format(eval_loss))
@@ -297,6 +341,7 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(dest="subparser_name")
     preprocessing_parser = subparsers.add_parser("preprocessing")
     training_parser = subparsers.add_parser("training")
+    ranking_parser = subparsers.add_parser("ranking")
     preprocessing_parser.add_argument("--input")
     preprocessing_parser.add_argument("--output")
     training_parser.add_argument("--trainpreprocessedfile", required=True)
@@ -304,6 +349,11 @@ if __name__ == "__main__":
     training_parser.add_argument("--batchsize", type=int)
     training_parser.add_argument("--epochs", type=int)
     training_parser.add_argument("--save")
+    ranking_parser.add_argument("--model")
+    ranking_parser.add_argument("--trainpreprocessedfile")
+    ranking_parser.add_argument("--evalpreprocessedfile")
+    ranking_parser.add_argument("--rankingoutput")
+    ranking_parser.add_argument("--batchsize", type=int)
     args = parser.parse_args()
     parser_arguments = vars(args)
     
@@ -319,6 +369,17 @@ if __name__ == "__main__":
                                 parser_arguments['epochs'],
                                 trainlabels,
                                 evaldata)
+    if parser_arguments['subparser_name'] == "ranking":
+        traindata, trainlabels = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
+        evaldata, labels = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
+        saved_model = parser_arguments['model']
+        batchsize = parser_arguments['batchsize']
+        output_path = parser_arguments['rankingoutput']
+        training_obj = Training()
+        predictions = training_obj.test(traindata, evaldata, saved_model, batchsize)
+        training_obj.ranking(predictions, output_path)
+        
+
         #print(loss)
         #print(preds[0])
         
