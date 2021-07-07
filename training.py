@@ -398,7 +398,7 @@ if __name__ == "__main__":
         batchsize = parser_arguments['batchsize']
         output_path = parser_arguments['rankingoutput']
         training_obj = Training()
-        predictions = training_obj.test(traindata, evaldata, saved_model, batchsize)
+        predictions = training_obj.test(traindata, saved_model, batchsize)
         rankings = training_obj.ranking(predictions, output_path, train_uids)
         write_utils.write_textgraph_run_file(rankings, output_path)
         
