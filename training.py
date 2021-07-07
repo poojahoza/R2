@@ -65,7 +65,7 @@ class Training(object):
             final_ranking_dict[query] = sorted_inner_dict.keys()
         return final_ranking_dict
         
-    def test(self, train_dataset, eval_dataset, saved_model, batchsize):
+    def test(self, train_dataset, saved_model, batchsize):
         self.load_model(saved_model)
         print(self.model)
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
@@ -393,7 +393,7 @@ if __name__ == "__main__":
                                 evaldata)
     if parser_arguments['subparser_name'] == "ranking":
         traindata, trainlabels, train_uids = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
-        evaldata, labels, eval_ids = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
+        #evaldata, labels, eval_ids = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
         saved_model = parser_arguments['model']
         batchsize = parser_arguments['batchsize']
         output_path = parser_arguments['rankingoutput']
