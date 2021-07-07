@@ -43,14 +43,15 @@ class Training(object):
     def load_model(self, model_dir):
         self.model = torch.load(model_dir)
         
-    def ranking(self, model_output_data, output_predict_file):
+    def ranking(self, model_output_data, output_predict_file, uids_dict):
         ranking_dict = dict()
         final_ranking_dict = dict()
         for pred in model_output_data:
             output_probs = pred[0].tolist()
-            uids_list = pred[3].tolist()
-            for index, ids in enumerate(uids_list):
-                query_id, exp_ids = ids.split('*')
+            sequence_ids = pred[1].tolist()
+            for index, ids in enumerate(sequence_ids):
+                uid = uids_dict[ids]
+                query_id, exp_ids = uid.split('*')
                 if query_id in ranking_dict:
                     temp_dict = ranking_dict[query_id]
                     if exp_ids in temp_dict:
@@ -85,7 +86,6 @@ class Training(object):
               
             labels = data[8]
             seqid = data[9]
-            uids = data[10]
             data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
             
             with torch.no_grad():
@@ -99,7 +99,7 @@ class Training(object):
                                      data[7])
                 outputs = outputs.detach().to('cpu')
                 outputs = torch.sigmoid(outputs)
-                total_preds.append([outputs, seqid, labels, uids])
+                total_preds.append([outputs, seqid, labels])
         
         #total_preds = np.concatenate(total_preds, axis=0)
         
@@ -286,7 +286,8 @@ def load_preprocessed_data(preprocessed_data_path):
     query_att_mask_tensor = torch.tensor([q_attn[7] for q_attn in final_data_list])
     labels_tensor = torch.tensor([labels[8] for labels in final_data_list])
     seqid_tensor = torch.tensor([seqid[9] for seqid in final_data_list])
-    uids_tensor = torch.tensor([uids[10] for uids in final_data_list])
+    #uids_tensor = torch.tensor([uids[10] for uids in final_data_list])
+    uids_dict = {uids[9]:uids[10] for uids in final_data_list}
     
     final_dataset = torch.utils.data.TensorDataset(
         indexed_tokens_tensor,
@@ -298,12 +299,11 @@ def load_preprocessed_data(preprocessed_data_path):
         query_segment_ids_tensor,
         query_att_mask_tensor,
         labels_tensor,
-        seqid_tensor,
-        uids_tensor
+        seqid_tensor
     )
     print("Finished loading Preprocessed data")
     print(labels_tensor.shape)
-    return final_dataset, labels_tensor
+    return final_dataset, labels_tensor, uids_dict
 
 # =============================================================================
 # # check if a GPU is present in the machine, if yes then utilize it
@@ -383,8 +383,8 @@ if __name__ == "__main__":
         dataset = RBERTQ1_data_preprocessor(parser_arguments['input'], 
                                             parser_arguments['output'])
     if parser_arguments['subparser_name'] == "training":
-        traindata, trainlabels = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
-        evaldata, labels = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
+        traindata, trainlabels, trainids = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
+        evaldata, labels, evalids = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
         loss, preds = Training().train_wrapper(traindata, 
                                 parser_arguments['save'], 
                                 parser_arguments['batchsize'],
@@ -392,14 +392,14 @@ if __name__ == "__main__":
                                 trainlabels,
                                 evaldata)
     if parser_arguments['subparser_name'] == "ranking":
-        traindata, trainlabels = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
-        evaldata, labels = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
+        traindata, trainlabels, train_uids = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
+        evaldata, labels, eval_ids = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
         saved_model = parser_arguments['model']
         batchsize = parser_arguments['batchsize']
         output_path = parser_arguments['rankingoutput']
         training_obj = Training()
         predictions = training_obj.test(traindata, evaldata, saved_model, batchsize)
-        rankings = training_obj.ranking(predictions, output_path)
+        rankings = training_obj.ranking(predictions, output_path, train_uids)
         write_utils.write_textgraph_run_file(rankings, output_path)
         
 
