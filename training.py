@@ -287,7 +287,7 @@ def load_preprocessed_data(preprocessed_data_path):
     labels_tensor = torch.tensor([labels[8] for labels in final_data_list])
     seqid_tensor = torch.tensor([seqid[9] for seqid in final_data_list])
     #uids_tensor = torch.tensor([uids[10] for uids in final_data_list])
-    uids_dict = {uids[9]:uids[10] for uids in final_data_list}
+    uids_dict = {uids[9][0]:uids[10][0].strip() for uids in final_data_list}
     
     final_dataset = torch.utils.data.TensorDataset(
         indexed_tokens_tensor,
