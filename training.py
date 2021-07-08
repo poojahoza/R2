@@ -50,7 +50,7 @@ class Training(object):
             output_probs = pred[0].tolist()
             sequence_ids = pred[1].tolist()
             for index, ids in enumerate(sequence_ids):
-                uid = uids_dict[ids]
+                uid = uids_dict[ids[0]]
                 query_id, exp_ids = uid.split('*')
                 if query_id in ranking_dict:
                     temp_dict = ranking_dict[query_id]
