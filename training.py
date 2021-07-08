@@ -61,7 +61,7 @@ class Training(object):
                 else:
                     ranking_dict[query_id] = {exp_ids: output_probs[index]}
         for query, exps in ranking_dict.items():
-            sorted_inner_dict = {k: v for k, v in sorted(exps.items(), key=lambda item: item[1], reverse= True)}
+            sorted_inner_dict = dict(sorted(exps.items(), key=lambda item: item[1], reverse= True)[:100])
             final_ranking_dict[query] = [*sorted_inner_dict.keys()]
         return final_ranking_dict
         
