@@ -62,7 +62,7 @@ class Training(object):
                     ranking_dict[query_id] = {exp_ids: output_probs[index]}
         for query, exps in ranking_dict.items():
             sorted_inner_dict = {k: v for k, v in sorted(exps.items(), key=lambda item: item[1], reverse= True)}
-            final_ranking_dict[query] = sorted_inner_dict.keys()
+            final_ranking_dict[query] = [*sorted_inner_dict.keys()]
         return final_ranking_dict
         
     def test(self, train_dataset, saved_model, batchsize):
