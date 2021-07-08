@@ -13,5 +13,5 @@ def write_textgraph_run_file(ranking_dict, output_file_path):
     string_list = [f'{k}:{v}' for k,v in ranking_dict.items()]
     
     with open(output_file_path, 'w') as f:
-        [f.write(f'{str}\n') for st in string_list]
+        [f.write(f'{st}\n') for st in string_list]
 
