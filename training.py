@@ -8,10 +8,10 @@ Created on Mon Jun 21 14:58:50 2021
 import argparse
 import torch
 import os
+import random
 import torch.optim as optim
 import torch.nn as nn
 import numpy as np
-import pandas as pd
 import write_utils
 
 from models import RBERTQ1
@@ -29,12 +29,20 @@ class Training(object):
         # check if a GPU is present in the machine, if yes then utilize it
         self.device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
         
+        self.set_seed()
+        
         self.config = BertConfig()
         self.model = RBERTQ1(config=self.config, device=self.device).to(self.device)
         #self.class_weights = torch.Tensors([4.5])
         #print(model)
         #self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         #optimizer = optim.Adam(sample_features, lr=2e-5, )
+
+    def set_seed():
+        torch.manual_seed(42) #setting RNG for all devices (CPU and CUDA)
+        #torch.cuda.manual_seed_all(42) #setting RNF across all GPUs
+        np.random.seed(42)
+        random.seed(42)
 
     def save_model(self, output_model_dir):
         torch.save(self.model, output_model_dir)
@@ -244,7 +252,7 @@ class Training(object):
         
         for epoch in range(total_epochs):
             print("Processing epoch : {0}".format(epoch))
-            
+            self.set_seed()
             #train model
             train_loss, train_preds = self.train(trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses)
             
