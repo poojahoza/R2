@@ -114,7 +114,7 @@ class Training(object):
         return total_preds
 
     
-    def evaluate(self, evalloader, loss_fn):
+    def evaluate(self, evalloader, loss_fn, eval_correct):
         print("Start Evaluation....")
         self.model.eval()
         
@@ -151,12 +151,16 @@ class Training(object):
                 outputs = outputs.detach().to('cpu')
                 outputs = torch.sigmoid(outputs)
                 total_preds.append([outputs, seqid, labels])
+                predicated_values = (outputs>0.5).float()
+                true_values = labels.float()
+                eval_correct += (predicated_values == true_values).float().sum()
+
         avg_loss = total_loss/len(evalloader)
         #total_preds = np.concatenate(total_preds, axis=0)
         
-        return avg_loss, total_preds
+        return avg_loss, total_preds, eval_correct
     
-    def train(self, trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses):
+    def train(self, trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses, train_correct):
         self.model.train()
         
         running_loss = 0.0
@@ -199,6 +203,9 @@ class Training(object):
             #to the total_preds is causing the increase in utilization of gpu memory
             outputs=outputs.detach().to('cpu')
             total_preds.append([outputs, seqid, labels])
+            predicated_values = (outputs>0.5).float()
+            true_values = labels.float()
+            train_correct += (predicated_values == true_values).float().sum()
             del outputs
             del labels
             del seqid
@@ -208,7 +215,7 @@ class Training(object):
         #print("Finished training")
         #pd.DataFrame(batch_train_losses).to_csv('1peoch_batch_lossses.csv', header=None, index=None)
         avg_loss = running_loss/len(trainloader)
-        return avg_loss, total_preds
+        return avg_loss, total_preds, train_correct
         
     
     def train_wrapper(self, train_dataset=None, 
@@ -229,8 +236,7 @@ class Training(object):
         evalloader = torch.utils.data.DataLoader(eval_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
         
         # Reshaping the labels tensor from 1 dimension to 2 to calculate the class weights
-        x_dim = list(labels_tensr.size())[0]
-        reshaped_label_tensr = torch.reshape(labels_tensr,(x_dim,))
+        reshaped_label_tensr = torch.reshape(labels_tensr,(labels_tensr.shape[0],))
         class_weights = compute_class_weight('balanced', np.unique(reshaped_label_tensr), reshaped_label_tensr.numpy())
         class_weights = torch.Tensor([class_weights[1]])
         print(class_weights)
@@ -245,6 +251,10 @@ class Training(object):
         train_losses = []
         eval_losses = []
         batch_train_losses = []
+        train_correct = 0
+        eval_correct = 0
+        train_correct_list = []
+        eval_correct_list = []
         
         # set initial loss to infinite
         best_valid_loss = float('inf')
@@ -254,13 +264,16 @@ class Training(object):
             print("Processing epoch : {0}".format(epoch))
             self.set_seed()
             #train model
-            train_loss, train_preds = self.train(trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses)
+            train_loss, train_preds, train_correct = self.train(trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses, train_correct)
             
             #validate model
-            eval_loss, eval_preds = self.evaluate(evalloader, loss_fn)
+            eval_loss, eval_preds, eval_correct = self.evaluate(evalloader, loss_fn, eval_correct)
             
-            print("Training loss : {0}".format(train_loss))
-            print("Evaluation loss : {0}".format(eval_loss))
+            train_accuracy = 100*train_correct/train_dataset.shape[0]
+            eval_accuracy = 100*eval_correct/eval_dataset.shape[0]
+            
+            print("Training loss : {0} , accuracy : {1}".format(train_loss, train_accuracy))
+            print("Evaluation loss : {0}, accuracy : {1}".format(eval_loss, eval_accuracy))
             
             if eval_loss < best_valid_loss:
                 best_valid_loss = eval_loss
@@ -268,12 +281,16 @@ class Training(object):
 
             train_losses.append(train_loss)
             eval_losses.append(eval_loss)
+            train_correct_list.append(train_accuracy)
+            eval_correct_list.append(eval_accuracy)
 
             # print("Training loss : {0}".format(train_loss))
             # print("Evaluation loss : {0}".format(eval_loss))
         
         print(train_losses)
         print(eval_losses)
+        print(train_correct_list)
+        print(eval_correct_list)
         print("Finished training and evaluation")
     
     
