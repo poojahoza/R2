@@ -38,7 +38,7 @@ class Training(object):
         #self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         #optimizer = optim.Adam(sample_features, lr=2e-5, )
 
-    def set_seed():
+    def set_seed(self):
         torch.manual_seed(42) #setting RNG for all devices (CPU and CUDA)
         #torch.cuda.manual_seed_all(42) #setting RNF across all GPUs
         np.random.seed(42)
@@ -269,8 +269,8 @@ class Training(object):
             #validate model
             eval_loss, eval_preds, eval_correct = self.evaluate(evalloader, loss_fn, eval_correct)
             
-            train_accuracy = 100*train_correct/train_dataset.shape[0]
-            eval_accuracy = 100*eval_correct/eval_dataset.shape[0]
+            train_accuracy = 100*train_correct/len(train_dataset)
+            eval_accuracy = 100*eval_correct/len(eval_dataset)
             
             print("Training loss : {0} , accuracy : {1}".format(train_loss, train_accuracy))
             print("Evaluation loss : {0}, accuracy : {1}".format(eval_loss, eval_accuracy))
