@@ -21,6 +21,7 @@ from sklearn.utils.class_weight import compute_class_weight
 from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocessor
 
 
+   
 class Training(object):
     
     def __init__(self):
@@ -32,17 +33,20 @@ class Training(object):
         self.set_seed()
         
         self.config = BertConfig()
-        self.model = RBERTQ1(config=self.config, device=self.device).to(self.device)
+        self.model = RBERTQ1(config=self.config, device=self.device)
+        self.model.to(self.device)
+        #str(self.model)
+        #summary(self.model, input_size=[(1, 16, 16), (1, 28, 28), (1, 16, 16), (1, 28, 28), (1, 16, 16), (1, 28, 28), (1, 16, 16), (1, 28, 28)])
         #self.class_weights = torch.Tensors([4.5])
         #print(model)
         #self.loss_fn = nn.BCEWithLogitsLoss(pos_weight=self.class_weights)
         #optimizer = optim.Adam(sample_features, lr=2e-5, )
 
     def set_seed(self):
-        torch.manual_seed(42) #setting RNG for all devices (CPU and CUDA)
-        #torch.cuda.manual_seed_all(42) #setting RNF across all GPUs
-        np.random.seed(42)
-        random.seed(42)
+        torch.manual_seed(3) #setting RNG for all devices (CPU and CUDA)
+        torch.cuda.manual_seed_all(3) #setting RNF across all GPUs
+        np.random.seed(3)
+        random.seed(3)
 
     def save_model(self, output_model_dir):
         torch.save(self.model, output_model_dir)
@@ -50,7 +54,7 @@ class Training(object):
     
     def load_model(self, model_dir):
         self.model = torch.load(model_dir)
-        
+
     def ranking(self, model_output_data, output_predict_file, uids_dict):
         ranking_dict = dict()
         final_ranking_dict = dict()
@@ -122,7 +126,7 @@ class Training(object):
         total_preds = []
         
         for i, data in enumerate(evalloader):
-            print(".")
+            #print(".")
             
             # Progress update every 500 batches.
             if i % 50 == 0 and not i == 0:
@@ -160,7 +164,7 @@ class Training(object):
         
         return avg_loss, total_preds, eval_correct
     
-    def train(self, trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses, train_correct):
+    def train(self, trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses, train_correct, ep_no):
         self.model.train()
         
         running_loss = 0.0
@@ -195,8 +199,14 @@ class Training(object):
             #batch_train_losses.append([i,loss])
             #optimizer.zero_grad()
             loss.backward()
+
+            #print(self.model.state_dict())
+
+            #plot_grad_flow(self.model.named_parameters(), i, ep_no, self.model.parameters())
             #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
             optimizer.step()
+
+            
             #Using detach().to('cpu') as the utilization of gpu memory increase with
             #every iteration. 
             #Assumed reason: the gradients of the predictions i.e. outputs when appending
@@ -241,7 +251,8 @@ class Training(object):
         class_weights = torch.Tensor([class_weights[1]])
         print(class_weights)
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
-        optimizer = optim.AdamW(self.model.parameters(), lr=2e-5, eps = 1e-8)
+        #loss_fn = nn.BCEWithLogitsLoss()
+        optimizer = optim.Adam(self.model.parameters(), lr=2e-5)
         
         total_epochs = epochs
         
@@ -251,8 +262,6 @@ class Training(object):
         train_losses = []
         eval_losses = []
         batch_train_losses = []
-        train_correct = 0
-        eval_correct = 0
         train_correct_list = []
         eval_correct_list = []
         
@@ -262,9 +271,14 @@ class Training(object):
         
         for epoch in range(total_epochs):
             print("Processing epoch : {0}".format(epoch))
+            #print(str(self.model))
             self.set_seed()
+
+            train_correct = 0
+            eval_correct = 0
+            
             #train model
-            train_loss, train_preds, train_correct = self.train(trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses, train_correct)
+            train_loss, train_preds, train_correct = self.train(trainloader, loss_fn, optimizer, output_model_dir, batch_train_losses, train_correct, epoch)
             
             #validate model
             eval_loss, eval_preds, eval_correct = self.evaluate(evalloader, loss_fn, eval_correct)
@@ -275,9 +289,10 @@ class Training(object):
             print("Training loss : {0} , accuracy : {1}".format(train_loss, train_accuracy))
             print("Evaluation loss : {0}, accuracy : {1}".format(eval_loss, eval_accuracy))
             
-            if eval_loss < best_valid_loss:
-                best_valid_loss = eval_loss
-                torch.save(self.model, './models/best_models.pth')
+            
+            #if eval_loss < best_valid_loss:
+                #best_valid_loss = eval_loss
+                #torch.save(self.model, './models/best_models.pth')
 
             train_losses.append(train_loss)
             eval_losses.append(eval_loss)
@@ -292,6 +307,8 @@ class Training(object):
         print(train_correct_list)
         print(eval_correct_list)
         print("Finished training and evaluation")
+
+        return eval_preds
     
     
 def load_preprocessed_data(preprocessed_data_path):
@@ -390,7 +407,8 @@ if __name__ == "__main__":
     training_parser = subparsers.add_parser("training")
     ranking_parser = subparsers.add_parser("ranking")
     preprocessing_parser.add_argument("--input")
-    preprocessing_parser.add_argument("--output")
+    preprocessing_parser.add_argument("--csvoutput")
+    preprocessing_parser.add_argument("--featuresoutput")
     training_parser.add_argument("--trainpreprocessedfile", required=True)
     training_parser.add_argument("--evalpreprocessedfile", required=True)
     training_parser.add_argument("--batchsize", type=int)
@@ -405,8 +423,9 @@ if __name__ == "__main__":
     parser_arguments = vars(args)
     
     if parser_arguments['subparser_name'] == "preprocessing":
-        dataset = RBERTQ1_data_preprocessor(parser_arguments['input'], 
-                                            parser_arguments['output'])
+        RBERTQ1_data_preprocessor(parser_arguments['input'], 
+                                  parser_arguments['csvoutput'],
+                                  parser_arguments['featuresoutput'])
     if parser_arguments['subparser_name'] == "training":
         traindata, trainlabels, trainids = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
         evaldata, labels, evalids = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
