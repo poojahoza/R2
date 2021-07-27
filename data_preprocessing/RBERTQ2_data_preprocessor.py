@@ -38,13 +38,13 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
             tokenized_text = tokenizer.tokenize(splited_text[1]+" "+explanation_text+" [SEP]")
             query_tokenized_len = len(tokenizer.tokenize(splited_text[1]))
             exp_tokenized_len = len(tokenizer.tokenize(splited_text[2]))
-            print(tokenized_text)
+            # print(tokenized_text)
             #sentence_list.append((splited_text[2], splited_text[3]))
             ent1_pos_st = tokenized_text.index('$')
             ent1_pos_end = tokenized_text.index('$', ent1_pos_st+1)
             ent2_pos_st = tokenized_text.index('#')
             ent2_pos_end = tokenized_text.index('#', ent2_pos_st+1)
-            print(ent1_pos_st, ent1_pos_end, ent2_pos_st, ent2_pos_end)
+            # print(ent1_pos_st, ent1_pos_end, ent2_pos_st, ent2_pos_end)
         
             if len(tokenized_text) > max_sentence_len:
               tokenized_text = tokenized_text[:max_sentence_len] # If the length of the sentence is more than max length then truncate
