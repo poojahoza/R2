@@ -423,7 +423,7 @@ if __name__ == "__main__":
     parser_arguments = vars(args)
     
     if parser_arguments['subparser_name'] == "preprocessing":
-        RBERTQ1_data_preprocessor(parser_arguments['input'], 
+        RBERTQ2_data_preprocessor(parser_arguments['input'], 
                                   parser_arguments['csvoutput'],
                                   parser_arguments['featuresoutput'])
     if parser_arguments['subparser_name'] == "training":
