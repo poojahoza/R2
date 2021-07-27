@@ -38,15 +38,11 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
             tokenized_text = tokenizer.tokenize(splited_text[1]+" "+explanation_text+" [SEP]")
             query_tokenized_len = len(tokenizer.tokenize(splited_text[1]))
             exp_tokenized_len = len(tokenizer.tokenize(splited_text[2]))
-            if sentence_count == 882822:
-                print(tokenized_text)
             #sentence_list.append((splited_text[2], splited_text[3]))
             ent1_pos_st = tokenized_text.index('$')
             ent1_pos_end = tokenized_text.index('$', ent1_pos_st+1)
             ent2_pos_st = tokenized_text.index('#')
             ent2_pos_end = tokenized_text.index('#', ent2_pos_st+1)
-            if sentence_count == 882822:
-                print(ent1_pos_st, ent1_pos_end, ent2_pos_st, ent2_pos_end)
         
             if len(tokenized_text) > max_sentence_len:
               tokenized_text = tokenized_text[:max_sentence_len] # If the length of the sentence is more than max length then truncate
@@ -78,14 +74,10 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
             # Mark the entity masks with 1 in the entity positions
             for ent1_ind in range(ent1_pos_st+1, ent1_pos_end):
               ent1_mask[ent1_ind] = 1
-            if sentence_count == 882822:
-                print(ent1_mask)
         
             for ent2_ind in range(ent2_pos_st+1, ent2_pos_end):
               ent2_mask[ent2_ind] = 1
               
-            if sentence_count == 882822:
-                print("before input")
             input_data.append(indexed_tokens)
             input_data.append(segments_ids)
             input_data.append(att_mask)
@@ -114,7 +106,9 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
       
     torch.save(final_data_list, features_output_file)
     writer = csv.writer(open(csv_output_file, 'w'))
-    writer.writerows(final_data_list)
+    for row in final_data_list:
+        writer.writerow(row)
+        print(row[6])
     
     # indexed_tokens_tensor = torch.tensor([ind_tokens[0] for ind_tokens in final_data_list])
     # segment_ids_tensor = torch.tensor([seg_ids[1] for seg_ids in final_data_list])
