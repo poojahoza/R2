@@ -83,7 +83,7 @@ def RBERTQ1_data_preprocessor(input_file, csv_output_file, features_output_file)
             
             # Mask the sentence tokens with 1
             att_mask = [1] * len(indexed_tokens)
-        
+            
             # padding the rest of the sequence length
             padding_len = max_sentence_len - len(indexed_tokens)
         
@@ -126,6 +126,10 @@ def RBERTQ1_data_preprocessor(input_file, csv_output_file, features_output_file)
             print("sentence count : %d " % sentence_count)
         except ValueError:
             exception_count += 1
+            print("exception count : %d " % exception_count)
+        except Exception:
+            exception_count += 1
+            print("general exception")
             print("exception count : %d " % exception_count)
     
     #print("The sentence count is %d" % sentence_count)
