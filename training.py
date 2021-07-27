@@ -19,6 +19,7 @@ from transformers import BertConfig
 from sklearn.utils.class_weight import compute_class_weight
 
 from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocessor
+from data_preprocessing.RBERTQ2_data_preprocessor import RBERTQ2_data_preprocessor
 
 
    
