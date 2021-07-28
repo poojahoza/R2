@@ -50,7 +50,8 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
             # Map the token strings to their vocabulary indeces.
             indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
             # Mark each of the tokens as belonging to sentence "0".
-            segments_ids = [0] * query_tokenized_len + [1] * exp_tokenized_len
+            segments_ids = [0] * query_tokenized_len + [1] * exp_tokenized_len+1
+            print(len(segments_ids))
             
             # Mask the sentence tokens with 1
             att_mask = [1] * len(indexed_tokens)
