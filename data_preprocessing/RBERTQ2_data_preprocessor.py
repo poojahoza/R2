@@ -38,6 +38,7 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
             tokenized_text = tokenizer.tokenize(splited_text[1]+" "+explanation_text+" [SEP]")
             query_tokenized_len = len(tokenizer.tokenize(splited_text[1]))
             exp_tokenized_len = len(tokenizer.tokenize(splited_text[2]))
+            exp_tokenized_len += 1 #for the last [SEP] token to make the length as 512
             #sentence_list.append((splited_text[2], splited_text[3]))
             ent1_pos_st = tokenized_text.index('$')
             ent1_pos_end = tokenized_text.index('$', ent1_pos_st+1)
@@ -50,8 +51,8 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
             # Map the token strings to their vocabulary indeces.
             indexed_tokens = tokenizer.convert_tokens_to_ids(tokenized_text)
             # Mark each of the tokens as belonging to sentence "0".
-            segments_ids = [0] * query_tokenized_len + [1] * exp_tokenized_len+1
-            print(len(segments_ids))
+            segments_ids = [0] * query_tokenized_len + [1] * exp_tokenized_len
+            #print(len(segments_ids))
             
             # Mask the sentence tokens with 1
             att_mask = [1] * len(indexed_tokens)
