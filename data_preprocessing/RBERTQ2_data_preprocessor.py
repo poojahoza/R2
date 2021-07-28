@@ -104,8 +104,10 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
     # else:
     #   torch.save(final_data_list, features_file)
       
-    torch.save(final_data_list, features_output_file)
+    #torch.save(final_data_list, features_output_file)
+    print("starting to save to csv")
     writer = csv.writer(open(csv_output_file, 'w'))
+    writer.writerow(["index","segments","attention","entity1","entity2","relevance","sequenceid","qids_uuids"])
     for row in final_data_list:
         writer.writerow(row)
         print(row[6])
