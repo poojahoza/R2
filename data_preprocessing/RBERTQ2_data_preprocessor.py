@@ -87,7 +87,7 @@ def RBERTQ2_data_preprocessor(input_file, csv_output_file, features_output_file)
             input_data.append(ent2_mask)
             input_data.append([int(splited_text[3])])
             input_data.append([int(splited_text[0])])
-            input_data.append([splited_text[4]])
+            input_data.append(splited_text[4])
         
         
             final_data_list.append(input_data)
