@@ -135,7 +135,7 @@ class RBERTQ2(BertPreTrainedModel):
     for param in self.bert.parameters():
          param.requires_grad = False
     
-  def forward(self, indexed_tokens, attention_mask, segment_ids, labels, ent1_mask, ent2_mask):
+  def forward(self, indexed_tokens, segment_ids, attention_mask, ent1_mask, ent2_mask):
     bert_output = self.bert(indexed_tokens, attention_mask=attention_mask, token_type_ids=segment_ids)
     cls_output = bert_output[1]
     sequence_output = bert_output[0]
@@ -178,4 +178,3 @@ class RBERTQ2(BertPreTrainedModel):
     #print(self.softmax_output.shape)
     #return self.softmax_output
     return concatenated_fc_output
-
