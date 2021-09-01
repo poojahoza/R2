@@ -54,23 +54,27 @@ class Training(object):
     def load_model(self, model_dir):
         self.model = torch.load(model_dir)
 
-    def ranking(self, model_output_data, output_predict_file, uids_dict):
+    def ranking(self, model_output_data, output_predict_file):
         ranking_dict = dict()
         final_ranking_dict = dict()
         for pred in model_output_data:
             output_probs = pred[0].tolist()
-            sequence_ids = pred[1].tolist()
-            for index, ids in enumerate(sequence_ids):
-                uid = uids_dict[ids[0]]
-                query_id, exp_ids = uid.split('*')
+            # sequence_ids = pred[1].tolist()
+            uids = pred[1]
+            for index, ids in enumerate(output_probs):
+                # uid = uids_dict[ids[0]]
+                query_id, exp_ids = uids[index].split('*')
+                output_relevancy = 0
+                if output_probs[index] > 0.5:
+                    output_relevancy = 1
                 if query_id in ranking_dict:
                     temp_dict = ranking_dict[query_id]
                     if exp_ids in temp_dict:
-                        ranking_dict[query_id][exp_ids] += output_probs[index]
+                        ranking_dict[query_id][exp_ids] += output_relevancy
                     else:
-                        ranking_dict[query_id][exp_ids] = output_probs[index]
+                        ranking_dict[query_id][exp_ids] = output_relevancy
                 else:
-                    ranking_dict[query_id] = {exp_ids: output_probs[index]}
+                    ranking_dict[query_id] = {exp_ids: output_relevancy}
         for query, exps in ranking_dict.items():
             sorted_inner_dict = dict(sorted(exps.items(), key=lambda item: item[1], reverse= True)[:100])
             final_ranking_dict[query] = [*sorted_inner_dict.keys()]
@@ -79,6 +83,7 @@ class Training(object):
     def test(self, train_dataset, saved_model, batchsize):
         self.load_model(saved_model)
         print(self.model)
+        self.model = self.model.to(self.device)
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
         #model_parameters = [p for n, p in self.model.named_parameters()]
         
@@ -86,31 +91,36 @@ class Training(object):
         self.model.eval()
         
         total_preds = []
+        test_batch_no = 1
         
-        for i, data in enumerate(train_dataloader):
+        for eval_data, eval_labels, eval_uids in train_dataloader:
             print(".")
             
             # Progress update every 500 batches.
-            if i % 50 == 0 and not i == 0:
+            if test_batch_no % 50 == 0 and not test_batch_no == 0:
               # Report progress.
-              print(' Eval Batch {:>5,}  of  {:>5,}.'.format(i, len(train_dataloader)))
+              print(' Eval Batch {:>5,}  of  {:>5,}.'.format(test_batch_no, len(train_dataloader)))
               
-            labels = data[8]
-            seqid = data[9]
-            data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
+            # labels = data[8]
+            # seqid = data[9]
+            eval_data = tuple(d.to(self.device) for d in eval_data)
             
             with torch.no_grad():
-                outputs = self.model(data[0], 
-                                     data[1], 
-                                     data[2], 
-                                     data[3], 
-                                     data[4], 
-                                     data[5], 
-                                     data[6], 
-                                     data[7])
-                outputs = outputs.detach().to('cpu')
-                outputs = torch.sigmoid(outputs)
-                total_preds.append([outputs, seqid, labels])
+                outputs = self.model(eval_data[0], 
+                                     eval_data[1], 
+                                     eval_data[2], 
+                                     eval_data[3], 
+                                     eval_data[4])
+                # outputs = outputs.detach().to('cpu')
+                # outputs = torch.sigmoid(outputs)
+                # total_preds.append([outputs, seqid, labels])
+                squeezed_output = torch.squeeze(outputs)
+                squeezed_output = squeezed_output.to(self.device)
+                eval_labels = eval_labels.to(self.device)
+                
+                squeezed_output = torch.sigmoid(squeezed_output)
+                total_preds.append([squeezed_output, eval_uids, eval_labels])
+                test_batch_no += 1
         
         #total_preds = np.concatenate(total_preds, axis=0)
         
@@ -410,14 +420,15 @@ if __name__ == "__main__":
                                 parser_arguments['epochs'],
                                 evaldata)
     if parser_arguments['subparser_name'] == "ranking":
-        traindata, trainlabels, train_uids = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
+        # traindata, trainlabels, train_uids = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
         #evaldata, labels, eval_ids = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
+        evaldata = TextGraphDatasetLoader(parser_arguments['trainpreprocessedfile'])
         saved_model = parser_arguments['model']
         batchsize = parser_arguments['batchsize']
         output_path = parser_arguments['rankingoutput']
         training_obj = Training()
-        predictions = training_obj.test(traindata, saved_model, batchsize)
-        rankings = training_obj.ranking(predictions, output_path, train_uids)
+        predictions = training_obj.test(evaldata, saved_model, batchsize)
+        rankings = training_obj.ranking(predictions, output_path)
         write_utils.write_textgraph_run_file(rankings, output_path)
         
 

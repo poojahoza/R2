@@ -7,6 +7,7 @@ Created on Mon Jun 21 14:15:46 2021
 """
 
 from transformers import BertPreTrainedModel, BertModel
+from torch_geometric.nn import GATConv
 import torch
 import torch.nn as nn
 
@@ -53,6 +54,29 @@ class FullyConnectedConcatenatedLayer(nn.Module):
     x = self.linear1(x)
     x = self.dropout(x)
     return x
+
+class GATSimpleLayer(nn.Module):
+  def __init__(self, config, device, heads):
+    super(GATSimpleLayer, self).__init__()
+
+    self.config = config
+    self.d = device
+    self.heads = heads
+    self.dropout = nn.Dropout(dropout_rate=0.1)
+    self.layer1 = GATConv(self.config.hidden_size, self.config.hidden_size, heads=self.heads, dropout_rate=0.1)
+    self.layer2 = GATConv(self.config.hidden_size, self.config.hidden_size, heads=self.heads, dropout_rate=0.1)
+    self.layer1 = self.layer1.to(self.d)
+    self.layer2 = self.layer2.to(self.d)
+
+  def forward(self, graph_data):
+    nodes = graph_data.x
+    edges = graph_data.edge_index
+
+    nodes = self.layer1(nodes, edges)
+    nodes = nodes.relu()
+    nodes = self.dropout(nodes)
+    nodes = self.layer2(nodes, edges)
+    return nodes
 
 class RBERTQ1(BertPreTrainedModel):
   def __init__(self, config, device):
@@ -137,8 +161,11 @@ class RBERTQ2(BertPreTrainedModel):
     
   def forward(self, indexed_tokens, segment_ids, attention_mask, ent1_mask, ent2_mask):
     bert_output = self.bert(indexed_tokens, attention_mask=attention_mask, token_type_ids=segment_ids)
-    cls_output = bert_output[1]
-    sequence_output = bert_output[0]
+    bert_output_last_hidden_state = bert_output.last_hidden_state
+    #cls_output = bert_output[1]
+    #sequence_output = bert_output[0]
+    cls_output = bert_output_last_hidden_state[:, 0, :]
+    sequence_output = bert_output_last_hidden_state
     # print(ent1_mask)
     # print(ent2_mask)
 
