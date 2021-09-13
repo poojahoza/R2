@@ -330,7 +330,11 @@ class Training(object):
         #at the below line when using the preprocessed data rbertq1_preprocessed_v1
         #Solution found from https://discuss.pytorch.org/t/runtimeerror-received-0-items-of-ancdata/4999
         # https://github.com/pytorch/pytorch/issues/973
-        labels_tensr = torch.tensor([json.loads(label)[0] for label in train_dataset.y])
+        
+        if self.experiment == "RBERTQ2":
+            labels_tensr = torch.tensor([json.loads(label)[0] for label in train_dataset.y])
+        elif self.experiment == "RelationAwareAttention":
+            labels_tensr = torch.tensor([label for label in train_dataset.y])
         trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
         #model_parameters = [p for n, p in self.model.named_parameters()]
         
