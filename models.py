@@ -20,10 +20,6 @@ class ScaledDotProductionAttention(nn.Module):
     """
     Scaled Dot-Product Attention proposed by "Attention Is All You Need"
     
-    Args: dim, mask
-        dim (int): dimension of attention
-        mask (torch.Tensor): tensor containing indices to be masked
-        
     Inputs: query, key, value, mask
         - query (batch, q_len, d_model): tensor containing projection vector
                                          for decoder
@@ -67,63 +63,88 @@ class ScaledDotProductionAttention(nn.Module):
 
 
 class FullyConnectedEntityLayer(nn.Module):
-  def __init__(self, 
-               input_tensor: int, 
-               output_tensor: int, 
-               device: str, 
-               dropout_rate:float=0.1):
-      
-    super(FullyConnectedEntityLayer, self).__init__()
-    self.dropout = nn.Dropout(dropout_rate)
-    self.linear = nn.Linear(input_tensor, output_tensor, bias=False)
-    nn.init.xavier_uniform_(self.linear.weight)
-    self.activation = nn.Tanh()
-    self.linear = self.linear.to(device)
+    
+    def __init__(self, 
+                 input_tensor: int, 
+                 output_tensor: int, 
+                 device: str, 
+                 dropout_rate:float=0.1):
+        
+        super(FullyConnectedEntityLayer, self).__init__()
+        self.dropout = nn.Dropout(dropout_rate)
+        self.linear = nn.Linear(input_tensor, output_tensor, bias=False)
+        nn.init.xavier_uniform_(self.linear.weight)
+        self.activation = nn.Tanh()
+        self.linear = self.linear.to(device)
     
 
-  def forward(self, x: Tensor) -> Tensor:
-    x = self.activation(x)
-    x = self.linear(x)
-    x = self.dropout(x)
-    return x
+    def forward(self, x: Tensor) -> Tensor:
+    
+        x = self.dropout(x)
+        x = self.activation(x)
+        x = self.linear(x)
+        return x
 
 class FullyConnectedCLSLayer(nn.Module):
-  def __init__(self, 
-               input_tensor: int, 
-               output_tensor: int, 
-               device: str, 
-               dropout_rate: float=0.1):
-    super(FullyConnectedCLSLayer, self).__init__()
-    self.dropout = nn.Dropout(dropout_rate)
-    self.linear = nn.Linear(input_tensor, output_tensor, bias=False)
-    nn.init.xavier_uniform_(self.linear.weight)
-    self.activation = nn.Tanh()
-    self.linear = self.linear.to(device)
-    #self.weight = nn.Parameter(self.linear.weight.grad)
+    
+    def __init__(self, 
+                 input_tensor: int, 
+                 output_tensor: int, 
+                 device: str, 
+                 dropout_rate: float=0.1):
+        super(FullyConnectedCLSLayer, self).__init__()
+        self.dropout = nn.Dropout(dropout_rate)
+        self.linear = nn.Linear(input_tensor, output_tensor, bias=False)
+        nn.init.xavier_uniform_(self.linear.weight)
+        self.activation = nn.Tanh()
+        self.linear = self.linear.to(device)
 
-  def forward(self, x: Tensor) -> Tensor:
-    x = self.activation(x)
-    x = self.linear(x)
-    x = self.dropout(x)
-    return x
+    def forward(self, x: Tensor) -> Tensor:
+        
+        x = self.dropout(x)
+        x = self.activation(x)
+        x = self.linear(x) 
+        return x
 
 class FullyConnectedConcatenatedLayer(nn.Module):
-  def __init__(self, 
-               input_tensor: int, 
-               output_tensor: int, 
-               device: str, 
-               dropout_rate: float=0.1):
-    super(FullyConnectedConcatenatedLayer, self).__init__()
-    self.dropout = nn.Dropout(dropout_rate)
-    self.linear1 = nn.Linear(input_tensor, output_tensor, bias=False)
-    nn.init.xavier_uniform_(self.linear1.weight)
-    self.linear1 = self.linear1.to(device)
-    #self.weight = nn.Parameter(self.linear1.weight.grad)
+    
+    def __init__(self, 
+                 input_tensor: int, 
+                 output_tensor: int, 
+                 device: str, 
+                 dropout_rate: float=0.1):
+        super(FullyConnectedConcatenatedLayer, self).__init__()
+        self.dropout = nn.Dropout(dropout_rate)
+        self.linear1 = nn.Linear(input_tensor, output_tensor, bias=False)
+        nn.init.xavier_uniform_(self.linear1.weight)
+        self.linear1 = self.linear1.to(device)
+    
 
-  def forward(self, x: Tensor) -> Tensor:
-    x = self.linear1(x)
-    x = self.dropout(x)
-    return x
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.dropout(x)
+        x = self.linear1(x)
+          
+        return x
+    
+class FullyConnectedLayer(nn.Module):
+    
+    def __init__(self,
+                 input_dim: int,
+                 output_dim: int,
+                 device: str,
+                 dropout_rate: float=0.1):
+        super(FullyConnectedLayer, self).__init__()
+        self.dropout = nn.Dropout(dropout_rate)
+        self.activation = F.relu()
+        self.linear = nn.Linear(input_dim, output_dim, bias=False)
+        nn.init.xavier_uniform_(self.linear.weight)
+        self.linear = self.linear.to(device)      
+        
+    def forward(self, x: Tensor) -> Tensor:
+        
+        x = self.dropout(x)
+        x = self.activation(self.linear(x))
+        return x
 
 # class GATSimpleLayer(nn.Module):
     
@@ -222,6 +243,7 @@ class RBERTQ1(BertPreTrainedModel):
 class RBERTQ2(BertPreTrainedModel):
     
   def __init__(self, config: dict, device: str):
+      
     super(RBERTQ2, self).__init__(config)
     self.config = config
     self.d = device
@@ -244,23 +266,14 @@ class RBERTQ2(BertPreTrainedModel):
       
     bert_output = self.bert(indexed_tokens, attention_mask=attention_mask, token_type_ids=segment_ids)
     bert_output_last_hidden_state = bert_output.last_hidden_state
-    #cls_output = bert_output[1]
-    #sequence_output = bert_output[0]
     cls_output = bert_output_last_hidden_state[:, 0, :]
     sequence_output = bert_output_last_hidden_state
-    # print(ent1_mask)
-    # print(ent2_mask)
 
     def entity_average(ent_seq_output, ent_mask):
       
       ent_mask_modified = ent_mask.unsqueeze(1)
       ent_mask_tensor_len = ent_mask.sum(dim=1).unsqueeze(1)
-      #print(ent_mask.shape)
-      #print(ent_mask_tensor_len)
       sum_tensor = (ent_mask_modified.float() @ ent_seq_output).squeeze(1)
-      #print("---------------")
-      #print(sum_tensor.float())
-      #print(ent_mask_tensor_len.float())
       ent_avg_tensor = sum_tensor.float()/ent_mask_tensor_len.float()
       return ent_avg_tensor
 
@@ -268,24 +281,13 @@ class RBERTQ2(BertPreTrainedModel):
     ent1_average_tensor = entity_average(sequence_output, ent1_mask)
     ent2_average_tensor = entity_average(sequence_output, ent2_mask)
     
-    # element-wise multiplication of the query cls output with the sentence cls and entities
-    cls_output = cls_output
-    ent1_average_tensor = ent1_average_tensor
-    ent2_average_tensor = ent2_average_tensor
-    
-    
-    #softmax = nn.Softmax(dim=1)
-    
+   
     cls_fc_output = self.cls_fc_obj(cls_output)
     ent1_fc_output = self.ent_fc_obj(ent1_average_tensor)
     ent2_fc_output = self.ent_fc_obj(ent2_average_tensor)
     
     concatenated_output = torch.cat([cls_fc_output, ent1_fc_output, ent2_fc_output], dim=1)
     concatenated_fc_output = self.concatenated_fc_obj(concatenated_output)
-    #self.softmax_output = self.softmax(self.concatenated_fc_output)
-    #print("==============")
-    #print(self.softmax_output.shape)
-    #return self.softmax_output
     return concatenated_fc_output
 
 class RelationAwareAttention(BertPreTrainedModel):
@@ -302,6 +304,10 @@ class RelationAwareAttention(BertPreTrainedModel):
         
         self.config.num_labels = 1
         self.attention_layer = ScaledDotProductionAttention()
+        self.fc_layer = FullyConnectedLayer(self.config.hidden_size,
+                                            self.config.num_labels,
+                                            self.d,
+                                            self.config.hidden_dropout_prob)
         for param in self.bert.parameters():
             param.requires_grad = False
             
@@ -330,8 +336,9 @@ class RelationAwareAttention(BertPreTrainedModel):
                                                  key_last_hid_layer_output,
                                                  value_last_hid_layer_output,
                                                  768)
+        connected_layer_output = self.fc_layer(context)
         
-        return context, attention
+        return connected_layer_output, attention
             
         
         
