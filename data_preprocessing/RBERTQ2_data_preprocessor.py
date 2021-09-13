@@ -6,8 +6,6 @@ Created on Mon Jun 21 14:31:57 2021
 @author: poojaoza
 """
 
-import torch
-import os
 import csv
 
 from transformers import BertTokenizer

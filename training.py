@@ -16,19 +16,21 @@ import numpy as np
 import pandas as pd
 import write_utils
 
-from models import RBERTQ1, RBERTQ2
+from models import RBERTQ1, RBERTQ2, RelationAwareAttention
 from transformers import BertConfig
 from sklearn.utils.class_weight import compute_class_weight
 
 from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocessor
 from data_preprocessing.RBERTQ2_data_preprocessor import RBERTQ2_data_preprocessor
+from data_preprocessing.RelationAwareAttention_data_preprocessor import RelationAwareAttention_data_preprocessor
 from data_loaders.TextGraphDatasetLoader import TextGraphDatasetLoader
+from data_loaders.TextGraphCandidateDatasetLoader import TextGraphCandidateDatasetLoader
 
 
    
 class Training(object):
     
-    def __init__(self):
+    def __init__(self, experiment):
         
         #self.dataset = dataset
         # check if a GPU is present in the machine, if yes then utilize it
@@ -37,7 +39,8 @@ class Training(object):
         self.set_seed()
         
         self.config = BertConfig()
-        self.model = RBERTQ2(config=self.config, device=self.device)
+        self.experiment = experiment
+        self.model = self.experiment(config=self.config, device=self.device)
         self.model.to(self.device)
         
 
@@ -105,12 +108,22 @@ class Training(object):
             # seqid = data[9]
             eval_data = tuple(d.to(self.device) for d in eval_data)
             
+            
+            
             with torch.no_grad():
-                outputs = self.model(eval_data[0], 
-                                     eval_data[1], 
-                                     eval_data[2], 
-                                     eval_data[3], 
-                                     eval_data[4])
+                
+                if self.experiment == "RBERTQ2":
+                
+                    outputs = self.model(eval_data[0], 
+                                         eval_data[1], 
+                                         eval_data[2], 
+                                         eval_data[3], 
+                                         eval_data[4])
+                elif self.experiment == "RelationAwareAttention":
+                    
+                    outputs, attnt = self.model(eval_data[0], 
+                                         eval_data[1], 
+                                         eval_data[1])
                 # outputs = outputs.detach().to('cpu')
                 # outputs = torch.sigmoid(outputs)
                 # total_preds.append([outputs, seqid, labels])
@@ -150,11 +163,17 @@ class Training(object):
             eval_data = tuple(d.to(self.device) for d in eval_data)
             
             with torch.no_grad():
-                outputs = self.model(eval_data[0], 
-                                     eval_data[1], 
-                                     eval_data[2], 
-                                     eval_data[3], 
-                                     eval_data[4])
+                
+                if self.experiment == "RBERTQ2":
+                    outputs = self.model(eval_data[0], 
+                                         eval_data[1], 
+                                         eval_data[2], 
+                                         eval_data[3], 
+                                         eval_data[4])
+                elif self.experiment == "RelationAwareAttention":
+                    outputs, attnt = self.model(eval_data[0],
+                                                eval_data[1],
+                                                eval_data[1])
                 #push outputs to cpu
                 
                 # outputs = outputs.to("cpu")
@@ -213,11 +232,17 @@ class Training(object):
 
             train_data = tuple(d.to(self.device) for d in train_data)
             
-            outputs = self.model(train_data[0],
-                                 train_data[1],
-                                 train_data[2],
-                                 train_data[3],
-                                 train_data[4])
+            if self.experiment == 'RBERTQ2':
+            
+                outputs = self.model(train_data[0],
+                                     train_data[1],
+                                     train_data[2],
+                                     train_data[3],
+                                     train_data[4])
+            elif self.experiment == "RelationAwareAttention":
+                outputs, attnt = self.model(train_data[0],
+                                            train_data[1],
+                                            train_data[1])
             #push outputs to cpu
             #outputs = outputs.to("cpu")
             #loss = loss_fn(outputs, labels.type_as(outputs))
@@ -391,6 +416,7 @@ if __name__ == "__main__":
     preprocessing_parser = subparsers.add_parser("preprocessing")
     training_parser = subparsers.add_parser("training")
     ranking_parser = subparsers.add_parser("ranking")
+    preprocessing_parser.add_argument("--preprocessmodel")
     preprocessing_parser.add_argument("--input")
     preprocessing_parser.add_argument("--csvoutput")
     preprocessing_parser.add_argument("--featuresoutput")
@@ -399,6 +425,7 @@ if __name__ == "__main__":
     training_parser.add_argument("--batchsize", type=int)
     training_parser.add_argument("--epochs", type=int)
     training_parser.add_argument("--save")
+    training_parser.add_argument("--experiment", required=True)
     ranking_parser.add_argument("--model")
     ranking_parser.add_argument("--trainpreprocessedfile")
     ranking_parser.add_argument("--evalpreprocessedfile")
@@ -408,17 +435,30 @@ if __name__ == "__main__":
     parser_arguments = vars(args)
     
     if parser_arguments['subparser_name'] == "preprocessing":
-        RBERTQ2_data_preprocessor(parser_arguments['input'], 
-                                  parser_arguments['csvoutput'],
-                                  parser_arguments['featuresoutput'])
+        if parser_arguments['preprocessmodel'] == "RBERTQ2":
+            RBERTQ2_data_preprocessor(parser_arguments['input'], 
+                                      parser_arguments['csvoutput'],
+                                      parser_arguments['featuresoutput'])
+        else: 
+            RelationAwareAttention_data_preprocessor(parser_arguments['input'], 
+                                                     parser_arguments['csvoutput'])
     if parser_arguments['subparser_name'] == "training":
-        traindata = TextGraphDatasetLoader(parser_arguments['trainpreprocessedfile'])
-        evaldata = TextGraphDatasetLoader(parser_arguments['evalpreprocessedfile'])
-        evaluation_preds = Training().train_wrapper(traindata, 
-                                parser_arguments['save'], 
-                                parser_arguments['batchsize'],
-                                parser_arguments['epochs'],
-                                evaldata)
+        if parser_arguments['experiment'] == "RBERTQ2":
+            traindata = TextGraphDatasetLoader(parser_arguments['trainpreprocessedfile'])
+            evaldata = TextGraphDatasetLoader(parser_arguments['evalpreprocessedfile'])
+            evaluation_preds = Training(parser_arguments['experiment']).train_wrapper(traindata, 
+                                    parser_arguments['save'], 
+                                    parser_arguments['batchsize'],
+                                    parser_arguments['epochs'],
+                                    evaldata)
+        else:
+            traindata = TextGraphCandidateDatasetLoader(parser_arguments['trainpreprocessedfile'])
+            evaldata = TextGraphCandidateDatasetLoader(parser_arguments['evalpreprocessedfile'])
+            evaluation_preds = Training(parser_arguments['experiment']).train_wrapper(traindata, 
+                                    parser_arguments['save'], 
+                                    parser_arguments['batchsize'],
+                                    parser_arguments['epochs'],
+                                    evaldata)
     if parser_arguments['subparser_name'] == "ranking":
         # traindata, trainlabels, train_uids = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
         #evaldata, labels, eval_ids = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
