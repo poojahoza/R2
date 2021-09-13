@@ -290,12 +290,15 @@ class RBERTQ2(BertPreTrainedModel):
 class RelationAwareAttention(BertPreTrainedModel):
     
     def __init__(self, config: dict, device: str):
+        
+        super(RelationAwareAttention, self).__init__(config)
         self.config = config
         self.d = device
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
         self.bert = BertModel.from_pretrained('bert-base-uncased',
                                   output_hidden_states = True, # Whether the model returns all hidden-states.
                                   )
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        
         self.config.num_labels = 1
         self.attention_layer = ScaledDotProductionAttention(768)
         for param in self.bert.parameters():
