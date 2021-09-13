@@ -40,20 +40,21 @@ class ScaledDotProductionAttention(nn.Module):
         outputs
     """
     
-    def __init__(self, dim: int):
+    def __init__(self):
         super(ScaledDotProductionAttention, self).__init__()
-        self.d_k = np.sqrt(dim)
-        
+           
     def forward(self,
                 query: Tensor,
                 key: Tensor,
                 value: Tensor,
+                dim: int,
                 mask: Optional[Tensor]=None) -> Tuple[Tensor, Tensor]:
         
         # let's say the shape of query tensor is (2, 9, 768)
         # and the key tensor shape is (2, 10, 768)
         # the shape of score tensor would be (2, 9, 10)
-        score = torch.bmm(query, key.transpose(1,2))/self.d_k
+        d_k = np.sqrt(dim)
+        score = torch.bmm(query, key.transpose(1,2))/d_k
         
         if mask is not None:
             score.masked_fill_(mask.reshape(score.size()), -1e9)
@@ -300,7 +301,7 @@ class RelationAwareAttention(BertPreTrainedModel):
                                   )
         
         self.config.num_labels = 1
-        self.attention_layer = ScaledDotProductionAttention(768)
+        self.attention_layer = ScaledDotProductionAttention()
         for param in self.bert.parameters():
             param.requires_grad = False
             
@@ -327,7 +328,8 @@ class RelationAwareAttention(BertPreTrainedModel):
         
         context,attention = self.attention_layer(query_last_hid_layer_output,
                                                  key_last_hid_layer_output,
-                                                 value_last_hid_layer_output)
+                                                 value_last_hid_layer_output,
+                                                 768)
         
         return context, attention
             
