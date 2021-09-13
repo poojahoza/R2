@@ -339,7 +339,11 @@ class RelationAwareAttention(BertPreTrainedModel):
         context,attention = self.attention_layer(query_last_hid_layer_output,
                                                  key_last_hid_layer_output,
                                                  value_last_hid_layer_output,
-                                                 768)
+                                                 self.config.hidden_size)
+        
+        # summing up the features of the entire sequence length
+        context = torch.sum(context, dim=1)
+        
         connected_layer_output = self.fc_layer(context)
         
         return connected_layer_output, attention
