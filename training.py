@@ -177,7 +177,7 @@ class Training(object):
                                          eval_data[3], 
                                          eval_data[4])
                 elif self.experiment == "RelationAwareAttention":
-                    eval_data = tuple(list(d).to(self.device) for d in eval_data)
+                    # eval_data = tuple(list(d).to(self.device) for d in eval_data)
                     outputs, attnt = self.model(eval_data[0],
                                                 eval_data[1],
                                                 eval_data[1])
@@ -247,7 +247,7 @@ class Training(object):
                                      train_data[3],
                                      train_data[4])
             elif self.experiment == "RelationAwareAttention":
-                train_data = tuple(list(d).to(self.device) for d in train_data)
+                # train_data = tuple(list(d).to(self.device) for d in train_data)
                 outputs, attnt = self.model(train_data[0],
                                             train_data[1],
                                             train_data[1])
