@@ -311,14 +311,17 @@ class RelationAwareAttention(BertPreTrainedModel):
                 mask: Optional[Tensor]=None) -> Tuple[Tensor, Tensor]:
         
         query_tokenizer = self.tokenizer(query, return_tensors="pt", padding=True)
+        query_tokenizer.to(self.device)
         query_bert_output = self.bert(**query_tokenizer)
         query_last_hid_layer_output = query_bert_output.last_hidden_state
         
         key_tokenizer = self.tokenizer(key, return_tensors="pt", padding=True)
+        key_tokenizer.to(self.device)
         key_bert_output = self.bert(**key_tokenizer)
         key_last_hid_layer_output = key_bert_output.last_hidden_state
         
         value_tokenizer = self.tokenizer(value, return_tensors="pt", padding=True)
+        value_tokenizer.to(self.device)
         value_bert_output = self.bert(**value_tokenizer)
         value_last_hid_layer_output = value_bert_output.last_hidden_state
         
