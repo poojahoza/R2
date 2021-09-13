@@ -234,10 +234,10 @@ class Training(object):
             #                      data[5], 
             #                      data[6], 
             #                      data[7])
-
-            train_data = tuple(d.to(self.device) for d in train_data)
             
             if self.experiment == 'RBERTQ2':
+                
+                train_data = tuple(d.to(self.device) for d in train_data)
             
                 outputs = self.model(train_data[0],
                                      train_data[1],
@@ -245,6 +245,7 @@ class Training(object):
                                      train_data[3],
                                      train_data[4])
             elif self.experiment == "RelationAwareAttention":
+                train_data = tuple(list(d).to(self.device) for d in train_data)
                 outputs, attnt = self.model(train_data[0],
                                             train_data[1],
                                             train_data[1])
