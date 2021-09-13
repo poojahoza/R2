@@ -130,20 +130,23 @@ class FullyConnectedLayer(nn.Module):
     
     def __init__(self,
                  input_dim: int,
+                 hidden_size: int,
                  output_dim: int,
                  device: str,
                  dropout_rate: float=0.1):
         super(FullyConnectedLayer, self).__init__()
         self.dropout = nn.Dropout(dropout_rate)
-        self.activation = F.relu()
-        self.linear = nn.Linear(input_dim, output_dim, bias=False)
-        nn.init.xavier_uniform_(self.linear.weight)
-        self.linear = self.linear.to(device)      
+        self.linear1 = nn.Linear(input_dim, hidden_size, bias=False)
+        self.linear2 = nn.Linear(hidden_size, output_dim, bias=False)
+        nn.init.xavier_uniform_(self.linear1.weight)
+        nn.init.xavier_uniform_(self.linear2.weight)
+        self.linear1 = self.linear1.to(device)      
+        self.linear2 = self.linear2.to(device)
         
     def forward(self, x: Tensor) -> Tensor:
         
         x = self.dropout(x)
-        x = self.activation(self.linear(x))
+        x = self.linear2(F.relu(self.linear1(x)))
         return x
 
 # class GATSimpleLayer(nn.Module):
