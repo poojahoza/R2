@@ -59,7 +59,7 @@ class ScaledDotProductionAttention(nn.Module):
         if mask is not None:
             score.masked_fill_(mask.reshape(score.size()), -1e9)
         
-        attention = nn.Softmax(score, dim=-1)
+        attention = F.softmax(score, dim=-1)
         context = torch.bmm(attention, value)
         
         return context, attention
