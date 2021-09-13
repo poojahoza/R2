@@ -40,7 +40,12 @@ class Training(object):
         
         self.config = BertConfig()
         self.experiment = experiment
-        self.model = self.experiment(config=self.config, device=self.device)
+        
+        if experiment == "RBERTQ2":
+            self.model = RBERTQ2(config=self.config, device=self.device)
+        else:
+            self.model = RelationAwareAttention(config=self.config, device=self.device)
+        
         self.model.to(self.device)
         
 
