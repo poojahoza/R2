@@ -308,6 +308,7 @@ class RelationAwareAttention(BertPreTrainedModel):
         self.config.num_labels = 1
         self.attention_layer = ScaledDotProductionAttention()
         self.fc_layer = FullyConnectedLayer(self.config.hidden_size,
+                                            self.config.hidden_size,
                                             self.config.num_labels,
                                             self.d,
                                             self.config.hidden_dropout_prob)
