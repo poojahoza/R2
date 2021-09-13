@@ -16,6 +16,53 @@ from typing import Optional, Tuple
 from torch import Tensor
 
 
+class MultiHeadAttention(nn.Module):
+    """
+    Multi-Head Attention proposed by "Attention Is All You Need"
+    
+    Inputs: query, key, value, mask
+        - query (batch, q_len, d_model): tensor containing projection vector
+                                         for decoder
+        - key (batch, k_len, d_model): tensor containing projection vector for
+        encoder
+        - value (batch, v_len, d_model): tensor containing features of the 
+        encoded input sequence
+        - mask (-): tensor containing indices to be masked
+        
+    Returns: context, attn
+        - context: tensor containing the context vector from attention 
+        mechanism
+        - attention: tensor containing the attention (alignment) from the encoder
+        outputs
+    """
+    
+    def __init__(self, 
+                 d_model_dim: int,
+                 heads: int,
+                 device: str,
+                 d_k_dim: Optional[int]=None,
+                 d_v_dim: Optional[int]=None):
+        super(MultiHeadAttention, self).__init__()
+        
+        self.d = device
+        
+        # not including batch_first=True option since it is not available in
+        # pytorch 1.3.1
+        self.multiheadattnt = nn.MultiheadAttention(d_model_dim, heads)
+        self.multiheadattnt.to(device=self.d)
+        
+    def forward(self, 
+                query: Tensor,
+                key: Tensor,
+                value: Tensor,
+                mask: Optional[Tensor]=None) -> Tuple[Tensor, Tensor]:
+        
+        context, attn_weights = self.multiheadattnt(query, key, value)
+        return 
+        
+        
+    
+
 class ScaledDotProductionAttention(nn.Module):
     """
     Scaled Dot-Product Attention proposed by "Attention Is All You Need"
@@ -306,7 +353,8 @@ class RelationAwareAttention(BertPreTrainedModel):
                                   )
         
         self.config.num_labels = 1
-        self.attention_layer = ScaledDotProductionAttention()
+        #self.attention_layer = ScaledDotProductionAttention()
+        self.attention_layer = MultiHeadAttention(self.config.hidden_size, 8, self.d)
         self.fc_layer = FullyConnectedLayer(self.config.hidden_size,
                                             self.config.hidden_size,
                                             self.config.num_labels,
@@ -336,10 +384,16 @@ class RelationAwareAttention(BertPreTrainedModel):
         value_bert_output = self.bert(**value_tokenizer)
         value_last_hid_layer_output = value_bert_output.last_hidden_state
         
-        context,attention = self.attention_layer(query_last_hid_layer_output,
-                                                 key_last_hid_layer_output,
-                                                 value_last_hid_layer_output,
-                                                 self.config.hidden_size)
+        # context,attention = self.attention_layer(query_last_hid_layer_output,
+        #                                          key_last_hid_layer_output,
+        #                                          value_last_hid_layer_output,
+        #                                          self.config.hidden_size)
+        
+        context, attention = self.attention_layer(query_last_hid_layer_output,
+                                                  key_last_hid_layer_output,
+                                                  value_last_hid_layer_output)
+        print(context.shape)
+        context = context.transpose(0, 1)
         
         # summing up the features of the entire sequence length
         context = torch.sum(context, dim=1)
