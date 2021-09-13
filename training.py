@@ -165,17 +165,19 @@ class Training(object):
             # seqid = data[9]
             # data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
 
-            eval_data = tuple(d.to(self.device) for d in eval_data)
+            
             
             with torch.no_grad():
                 
                 if self.experiment == "RBERTQ2":
+                    eval_data = tuple(d.to(self.device) for d in eval_data)
                     outputs = self.model(eval_data[0], 
                                          eval_data[1], 
                                          eval_data[2], 
                                          eval_data[3], 
                                          eval_data[4])
                 elif self.experiment == "RelationAwareAttention":
+                    eval_data = tuple(list(d).to(self.device) for d in eval_data)
                     outputs, attnt = self.model(eval_data[0],
                                                 eval_data[1],
                                                 eval_data[1])
