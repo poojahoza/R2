@@ -42,14 +42,15 @@ class MultiHeadAttention(nn.Module):
                  device: str,
                  d_k_dim: Optional[int]=None,
                  d_v_dim: Optional[int]=None):
+        
         super(MultiHeadAttention, self).__init__()
         
-        self.d = device
         
-        # not including batch_first=True option since it is not available in
-        # pytorch 1.3.1
-        self.multiheadattnt = nn.MultiheadAttention(d_model_dim, heads)
-        self.multiheadattnt.to(device=self.d)
+        # in case of pyTorch 1.3.1 , batch_first and device options will not work
+        self.multiheadattnt = nn.MultiheadAttention(d_model_dim, 
+                                                    heads, 
+                                                    batch_first=True,
+                                                    device = device)
         
     def forward(self, 
                 query: Tensor,
@@ -58,7 +59,7 @@ class MultiHeadAttention(nn.Module):
                 mask: Optional[Tensor]=None) -> Tuple[Tensor, Tensor]:
         
         context, attn_weights = self.multiheadattnt(query, key, value)
-        return 
+        return context, attn_weights
         
         
     
@@ -257,12 +258,7 @@ class RBERTQ1(BertPreTrainedModel):
       
       ent_mask_modified = ent_mask.unsqueeze(1)
       ent_mask_tensor_len = ent_mask.sum(dim=1).unsqueeze(1)
-      #print(ent_mask.shape)
-      #print(ent_mask_tensor_len)
       sum_tensor = (ent_mask_modified.float() @ ent_seq_output).squeeze(1)
-      #print("---------------")
-      #print(sum_tensor.float())
-      #print(ent_mask_tensor_len.float())
       ent_avg_tensor = sum_tensor.float()/ent_mask_tensor_len.float()
       return ent_avg_tensor
 
@@ -284,10 +280,6 @@ class RBERTQ1(BertPreTrainedModel):
 
     concatenated_output = torch.cat([cls_fc_output, ent1_fc_output, ent2_fc_output], dim=1)
     concatenated_fc_output = self.concatenated_fc_obj(concatenated_output)
-    #self.softmax_output = self.softmax(self.concatenated_fc_output)
-    #print("==============")
-    #print(self.softmax_output.shape)
-    #return self.softmax_output
     return concatenated_fc_output
 
 class RBERTQ2(BertPreTrainedModel):
