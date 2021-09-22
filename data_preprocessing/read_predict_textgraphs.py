@@ -6,8 +6,8 @@ Created on Sat Jun 19 16:43:16 2021
 @author: poojaoza
 """
 
-candidate_passages_txt_file = '/media/poojaoza/extradrive1/projects/tg2021task/predict-tfidf-train.txt'
-train_relevant_json = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/wt-expert-ratings.train.json'
+candidate_passages_txt_file = input().strip()
+train_relevant_json = input().strip()
 
 
 import json

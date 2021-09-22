@@ -19,6 +19,7 @@ import write_utils
 from models import RBERTQ1, RBERTQ2, RelationAwareAttention
 from transformers import BertConfig
 from sklearn.utils.class_weight import compute_class_weight
+from Typing import Optional
 
 from data_preprocessing.RBERTQ1_data_preprocessor import RBERTQ1_data_preprocessor
 from data_preprocessing.RBERTQ2_data_preprocessor import RBERTQ2_data_preprocessor
@@ -27,12 +28,42 @@ from data_loaders.TextGraphDatasetLoader import TextGraphDatasetLoader
 from data_loaders.TextGraphCandidateDatasetLoader import TextGraphCandidateDatasetLoader
 
 
+class attnOptm(object):
+    
+    def __init__ (self, model_size: int, factor: int, warmup_steps: int, optimizer):
+        self.optimizer = optimizer
+        self.warmupsteps = warmup_steps
+        self.factor = factor
+        self.model_size = model_size
+        self._rate = 0
+        self._step = 0
+        self.learningrate = []
+    
+    def step(self):
+        # Update parameters and learning rate"
+        self._step += 1
+        rate = self.rate()
+        for p in self.optimizer.param_groups:
+          p['lr'] = rate
+        self._rate = rate
+        self.learningrate.append([rate,self._step])
+        self.optimizer.step()
+        return self.learningrate
+    
+    def zero_grad(self):
+        self.optimizer.zero_grad()
+    
+    def rate(self, step: Optional[int]=None):
+        if step is None:
+          step = self._step
+        return self.factor * (self.model_size ** (-0.5) * min(step ** (-0.5), step*self.warmupsteps ** (-1.5)))
+
+
    
 class Training(object):
     
     def __init__(self, experiment):
         
-        #self.dataset = dataset
         # check if a GPU is present in the machine, if yes then utilize it
         self.device = torch.device("cuda:1") if torch.cuda.is_available() else torch.device("cpu")
         
@@ -93,9 +124,6 @@ class Training(object):
         print(self.model)
         self.model = self.model.to(self.device)
         train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
-        #model_parameters = [p for n, p in self.model.named_parameters()]
-        
-        #eval_dataloader = torch.utils.data.DataLoader(eval_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
         self.model.eval()
         
         total_preds = []
@@ -109,8 +137,6 @@ class Training(object):
               # Report progress.
               print(' Eval Batch {:>5,}  of  {:>5,}.'.format(test_batch_no, len(train_dataloader)))
               
-            # labels = data[8]
-            # seqid = data[9]
             eval_data = tuple(d.to(self.device) for d in eval_data)
             
             
@@ -129,9 +155,6 @@ class Training(object):
                     outputs, attnt = self.model(eval_data[0], 
                                          eval_data[1], 
                                          eval_data[1])
-                # outputs = outputs.detach().to('cpu')
-                # outputs = torch.sigmoid(outputs)
-                # total_preds.append([outputs, seqid, labels])
                 squeezed_output = torch.squeeze(outputs)
                 squeezed_output = squeezed_output.to(self.device)
                 eval_labels = eval_labels.to(self.device)
@@ -140,7 +163,6 @@ class Training(object):
                 total_preds.append([squeezed_output, eval_uids, eval_labels])
                 test_batch_no += 1
         
-        #total_preds = np.concatenate(total_preds, axis=0)
         
         return total_preds
 
@@ -160,12 +182,7 @@ class Training(object):
             if eval_batch_no % 50 == 0 and not eval_batch_no == 0:
               # Report progress.
               print(' Eval Batch {:>5,}  of  {:>5,}.'.format(eval_batch_no, len(evalloader)))
-              
-            # labels = data[8]
-            # seqid = data[9]
-            # data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
-
-            
+                       
             
             with torch.no_grad():
                 
@@ -177,14 +194,10 @@ class Training(object):
                                          eval_data[3], 
                                          eval_data[4])
                 elif self.experiment == "RelationAwareAttention":
-                    # eval_data = tuple(list(d).to(self.device) for d in eval_data)
                     outputs, attnt = self.model(eval_data[0],
                                                 eval_data[1],
                                                 eval_data[1])
-                #push outputs to cpu
-                
-                # outputs = outputs.to("cpu")
-
+ 
                 squeezed_output = torch.squeeze(outputs)
                 squeezed_output = squeezed_output.to(self.device)
                 eval_labels = eval_labels.to(self.device)
@@ -215,27 +228,8 @@ class Training(object):
         batch_no = 1
         
         for train_data, train_labels, train_uids in trainloader:
-            #print(i)
-            #print(len(data[0]))
-            
-            # Progress update every 500 batches.
-            # if i % 50 == 0 and not i == 0:
-            #   # Report progress.
-            #   print(' Train Batch {:>5,}  of  {:>5,}.'.format(i, len(trainloader)))
       
             self.model.zero_grad()
-            
-            # labels = data[8]
-            # seqid = data[9]
-            # data = tuple(d.to(self.device) for i, d in enumerate(data) if i<8)
-            # outputs = self.model(data[0], 
-            #                      data[1], 
-            #                      data[2], 
-            #                      data[3], 
-            #                      data[4], 
-            #                      data[5], 
-            #                      data[6], 
-            #                      data[7])
             
             if self.experiment == 'RBERTQ2':
                 
@@ -247,29 +241,21 @@ class Training(object):
                                      train_data[3],
                                      train_data[4])
             elif self.experiment == "RelationAwareAttention":
-                # train_data = tuple(list(d).to(self.device) for d in train_data)
                 outputs, attnt = self.model(train_data[0],
                                             train_data[1],
                                             train_data[1])
-            #push outputs to cpu
-            #outputs = outputs.to("cpu")
-            #loss = loss_fn(outputs, labels.type_as(outputs))
-
+ 
             outputs = outputs.to(self.device)
             squeezed_output = torch.squeeze(outputs)
             squeezed_output = squeezed_output.to(self.device)
             train_labels = train_labels.to(self.device)
             loss = loss_fn(squeezed_output, train_labels.type_as(squeezed_output))
             print("batch : {0} loss : {1}".format(batch_no, loss))
-            #batch_train_losses = batch_train_losses.to('cpu')
-            #batch_train_losses.append([i,loss])
-            #optimizer.zero_grad()
+ 
             loss.backward()
 
-            #print(self.model.state_dict())
 
             #plot_grad_flow(self.model.named_parameters(), i, ep_no, self.model.parameters())
-            #torch.nn.utils.clip_grad_norm_(self.model.parameters(), 1.0)
             optimizer.step()
 
             
@@ -286,23 +272,17 @@ class Training(object):
             
 
             squeezed_output = torch.sigmoid(squeezed_output)
-            # print("maxmimum : {0} minimum : {1} ".format(torch.max(squeezed_output).item(), torch.min(squeezed_output).item()))
 
             predicated_values = (squeezed_output>0.5).float()
-            # true_values = labels.float()
             
             predicated_values_relevant = (predicated_values == 1.0).float().sum()
-            # print(predicated_values_relevant.item())
 
             total_preds.append([predicated_values, train_uids, train_labels])
 
             true_values = train_labels.float()
             true_values_relevant = (true_values == 1.0).float().sum()
-            # print(true_values_relevant.item())
             common_relevant_predicts = 0
-            # print(predicated_values)
             for pred_val, true_val in zip(predicated_values, true_values):
-              # print(pred_val.item(), true_val.item())
               if pred_val.item() == true_val.item() and pred_val.item() == 1.0:
                 common_relevant_predicts += 1
             train_correct += (predicated_values == true_values).float().sum()
@@ -316,8 +296,6 @@ class Training(object):
             running_loss += loss.item()
             batch_no += 1
         self.save_model(output_model_dir)
-        #print("Finished training")
-        #pd.DataFrame(batch_train_losses).to_csv('1peoch_batch_lossses.csv', header=None, index=None)
         avg_loss = running_loss/len(trainloader)
         return avg_loss, total_preds, train_correct
         
@@ -339,20 +317,22 @@ class Training(object):
         elif self.experiment == "RelationAwareAttention":
             labels_tensr = torch.tensor([label for label in train_dataset.y])
         trainloader = torch.utils.data.DataLoader(train_dataset, batch_size=batchsize, shuffle=True, num_workers=0)  
-        #model_parameters = [p for n, p in self.model.named_parameters()]
         
         evalloader = torch.utils.data.DataLoader(eval_dataset, batch_size=batchsize, shuffle=False, num_workers=0)  
         
         # Reshaping the labels tensor from 1 dimension to 2 to calculate the class weights
         reshaped_label_tensr = torch.reshape(labels_tensr,(labels_tensr.shape[0],))
         class_weights = compute_class_weight('balanced', np.unique(reshaped_label_tensr), reshaped_label_tensr.numpy())
-        # print(class_weights)
         class_weights = torch.Tensor([class_weights[1]])
-        # print(class_weights)
         class_weights = class_weights.to(self.device)
         loss_fn = nn.BCEWithLogitsLoss(pos_weight=class_weights)
-        #loss_fn = nn.BCEWithLogitsLoss()
-        optimizer = optim.Adam(self.model.parameters(), lr=2e-5)
+        
+        # optimizer = optim.Adam(self.model.parameters(), lr=3e-4)
+        optimizer = optim.Adam(self.model.parameters(), lr=2e-4)
+        # optimizer = attnOptm(self.model.config.hidden_size, 
+        #                      2, 
+        #                      4000, 
+        #                      optim.Adam(self.model.parameters(), lr=0, betas=(0.9, 0.98), eps=1e-9))
         
         total_epochs = epochs
         
@@ -365,13 +345,10 @@ class Training(object):
         train_correct_list = []
         eval_correct_list = []
         
-        # set initial loss to infinite
-        best_valid_loss = float('inf')
         
         
         for epoch in range(total_epochs):
             print("Processing epoch : {0}".format(epoch))
-            #print(str(self.model))
             self.set_seed()
 
             train_correct = 0
@@ -396,9 +373,6 @@ class Training(object):
             print("Evaluation loss : {0}, accuracy : {1}".format(eval_loss, eval_accuracy))
             
             
-            #if eval_loss < best_valid_loss:
-                #best_valid_loss = eval_loss
-                #torch.save(self.model, './models/best_models.pth')
 
             train_losses.append(train_loss)
             eval_losses.append(eval_loss)
@@ -472,8 +446,6 @@ if __name__ == "__main__":
                                     parser_arguments['epochs'],
                                     evaldata)
     if parser_arguments['subparser_name'] == "ranking":
-        # traindata, trainlabels, train_uids = load_preprocessed_data(parser_arguments['trainpreprocessedfile'])
-        #evaldata, labels, eval_ids = load_preprocessed_data(parser_arguments['evalpreprocessedfile'])
         evaldata = TextGraphDatasetLoader(parser_arguments['trainpreprocessedfile'])
         saved_model = parser_arguments['model']
         batchsize = parser_arguments['batchsize']
@@ -484,6 +456,4 @@ if __name__ == "__main__":
         write_utils.write_textgraph_run_file(rankings, output_path)
         
 
-        #print(loss)
-        #print(preds[0])
         

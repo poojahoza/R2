@@ -6,14 +6,10 @@ Created on Sat Jun 19 16:43:16 2021
 @author: poojaoza
 """
 
-train_relevant_json = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/wt-expert-ratings.dev.json'
-entity_pairs_txt_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
-candidate_passages_txt_file = '/media/poojaoza/extradrive1/projects/tg2021task/predict-tfidf-dev/predict.txt'
-output_train_entity_pairs_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/rbertq1-input-tfidf-candidate-passages.dev.tsv'
-
-# train_relevant_json = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/wt-expert-ratings.dev.json'
-# entity_pairs_txt_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
-# output_train_entity_pairs_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/rbertq1-input.dev.tsv'
+train_relevant_json = input().strip()
+entity_pairs_txt_file = input().strip()
+candidate_passages_txt_file = input().strip()
+output_train_entity_pairs_file = input().strip()
 
 
 import json

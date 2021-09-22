@@ -7,13 +7,12 @@ Created on Wed Aug 04 11:30 2021
 """
 
 
-train_relevant_json = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/wt-expert-ratings.dev.json'
-entity_pairs_txt_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/json_tables_entity_pairs_data/json_tables_entity_pairs_train_data.txt'
-output_train_entity_pairs_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/rbertq1-input-new-candidate-passage-sampling.dev.tsv'
-output_train_json_file = '/home/poojaoza/Documents/TextGraph2021_preprocessed_data/data/rbertq1-input-new-candidate-passage-sampling.dev.json'
-tables_dir = '/media/poojaoza/extradrive1/projects/tg2021task/data-evalperiod/tables'
-candidate_passages_txt_file = '/media/poojaoza/extradrive1/projects/tg2021task/predict-tfidf-dev/predict.txt'
-
+train_relevant_json = input().strip()
+entity_pairs_txt_file = input().strip()
+output_train_entity_pairs_file = input().strip()
+output_train_json_file = input().strip()
+tables_dir = input().strip()
+candidate_passages_txt_file = input().strip()
 
 
 import os
